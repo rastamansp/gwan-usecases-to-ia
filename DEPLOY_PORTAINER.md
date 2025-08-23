@@ -9,29 +9,30 @@
 - ✅ Acesso aos serviços externos:
   - PostgreSQL: `postgres.gwan.com.br:5433`
   - RabbitMQ: `rabbitmq.gwan.com.br:5672`
+- ✅ **Acesso à internet** para clonar o repositório GitHub
 
 ## 🐳 Configuração Docker Compose
 
-### 1. Arquivo Principal: `docker-compose.prod.yml`
+### 1. **Opção A: Deploy Direto (Recomendado para desenvolvimento)**
+- **Arquivo**: `docker-compose.prod.yml`
+- **Método**: Copiar código fonte para o servidor
 
-Este arquivo está configurado para:
-- **Rede**: `gwan` (rede externa do Portainer)
-- **Traefik**: Configurado para `mart.gwan.com.br`
-- **SSL**: Automático via letsencrypt
-- **Recursos**: Limitados para produção
-
-### 2. Estrutura de URLs
-
-```
-🌐 mart.gwan.com.br
-├── 📱 /api/* → Aplicação Principal (NestJS)
-└── ⚙️ /worker/* → Worker Playwright
-```
+### 2. **Opção B: Deploy com Git Clone (Recomendado para produção)**
+- **Arquivo**: `docker-compose.prod.git.yml`
+- **Método**: Clone automático do GitHub durante o build
 
 ## 🚀 Deploy no Portainer
 
-### Passo 1: Criar Stack
+### **Opção A: Deploy Direto (Sem Git)**
 
+#### Passo 1: Preparar Código Fonte
+1. **Clone o repositório no servidor:**
+   ```bash
+   git clone https://github.com/rastamansp/gwan-usecases-to-ia.git
+   cd gwan-usecases-to-ia
+   ```
+
+#### Passo 2: Criar Stack
 1. **Acesse o Portainer**
 2. **Vá para Stacks**
 3. **Clique em "Add stack"**
@@ -40,18 +41,27 @@ Este arquivo está configurado para:
    - **Build method**: `Web editor`
    - **Copy o conteúdo do `docker-compose.prod.yml`**
 
-### Passo 2: Configurar Rede
+### **Opção B: Deploy com Git Clone (Recomendado)**
 
+#### Passo 1: Criar Stack
+1. **Acesse o Portainer**
+2. **Vá para Stacks**
+3. **Clique em "Add stack"**
+4. **Configure:**
+   - **Name**: `product-search-automation`
+   - **Build method**: `Web editor`
+   - **Copy o conteúdo do `portainer-stack-git.yml`**
+
+#### Passo 2: Configurar Rede
 1. **Verifique se a rede `gwan` existe**
 2. **Se não existir, crie:**
    ```bash
    docker network create gwan
    ```
 
-### Passo 3: Deploy
-
+#### Passo 3: Deploy
 1. **Clique em "Deploy the stack"**
-2. **Aguarde a construção das imagens**
+2. **Aguarde a construção das imagens** (inclui clone do Git)
 3. **Verifique os logs de build**
 
 ## 🔧 Configurações Traefik
@@ -147,7 +157,16 @@ docker network ls | grep gwan
 docker exec product-search-app-prod ping postgres.gwan.com.br
 ```
 
-#### 2. Erro de Traefik
+#### 2. Erro de Git Clone
+```bash
+# Verificar logs de build
+docker-compose -f docker-compose.prod.git.yml logs
+
+# Verificar conectividade com GitHub
+docker exec product-search-app-prod ping github.com
+```
+
+#### 3. Erro de Traefik
 ```bash
 # Verificar logs do Traefik
 docker logs traefik
@@ -156,13 +175,13 @@ docker logs traefik
 docker exec traefik traefik version
 ```
 
-#### 3. Erro de Build
+#### 4. Erro de Build
 ```bash
 # Verificar logs de build
-docker-compose -f docker-compose.prod.yml logs
+docker-compose -f docker-compose.prod.git.yml logs
 
 # Reconstruir imagens
-docker-compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.git.yml up -d --build
 ```
 
 ### Comandos Úteis
@@ -178,7 +197,10 @@ docker stats
 docker network inspect gwan
 
 # Ver logs de todos os serviços
-docker-compose -f docker-compose.prod.yml logs -f
+docker-compose -f docker-compose.prod.git.yml logs -f
+
+# Limpar cache do Git (se necessário)
+docker volume rm product-search-automation_git-cache
 ```
 
 ## 📈 Escalabilidade
@@ -191,7 +213,7 @@ docker-compose -f docker-compose.prod.yml logs -f
 
 ### Para Escalar
 
-1. **Editar o docker-compose.prod.yml**
+1. **Editar o docker-compose.prod.git.yml**
 2. **Ajustar recursos conforme necessário**
 3. **Redeploy da stack**
 
@@ -204,6 +226,7 @@ docker-compose -f docker-compose.prod.yml logs -f
 - ✅ **Health Checks**: Monitoramento automático
 - ✅ **Resource Limits**: Controle de recursos
 - ✅ **Logs Estruturados**: Para auditoria
+- ✅ **Git Clone Seguro**: Apenas branch main
 
 ### Recomendações Adicionais
 
@@ -211,6 +234,14 @@ docker-compose -f docker-compose.prod.yml logs -f
 - 🛡️ **Firewall**: Restringir acesso às portas
 - 📊 **Monitoramento**: Implementar alertas
 - 🔄 **Backup**: Backup automático dos logs
+
+## 🚀 **Recomendação para Produção**
+
+**Use a Opção B (Git Clone)** porque:
+- ✅ **Atualizações automáticas** via Git
+- ✅ **Versionamento** controlado
+- ✅ **Deploy consistente** em todos os ambientes
+- ✅ **Rollback fácil** para versões anteriores
 
 ## 📞 Suporte
 
@@ -220,6 +251,7 @@ docker-compose -f docker-compose.prod.yml logs -f
 2. **Verificar conectividade de rede**
 3. **Verificar configuração do Traefik**
 4. **Verificar recursos do sistema**
+5. **Verificar logs de Git clone**
 
 ### Contatos
 
@@ -229,4 +261,4 @@ docker-compose -f docker-compose.prod.yml logs -f
 
 ---
 
-**🎯 Sistema configurado para produção no Portainer com Traefik!**
+**🎯 Sistema configurado para produção no Portainer com Traefik e Git Clone automático!**
