@@ -5,7 +5,7 @@ services:
   app:
     build:
       context: https://github.com/rastamansp/gwan-usecases-to-ia.git
-      dockerfile: Dockerfile.prod.robust
+      dockerfile: Dockerfile.prod
     container_name: product-search-app-prod
     restart: unless-stopped
     networks:
@@ -42,7 +42,7 @@ services:
   worker:
     build:
       context: https://github.com/rastamansp/gwan-usecases-to-ia.git
-      dockerfile: Dockerfile.worker.prod.robust
+      dockerfile: Dockerfile.worker.prod
     container_name: product-search-worker-prod
     restart: unless-stopped
     networks:
@@ -57,7 +57,6 @@ services:
       - PLAYWRIGHT_HEADLESS=true
       - PLAYWRIGHT_TIMEOUT=30000
     labels:
-      - "traefik.enable=true"
       - "traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)"
       - "traefik.http.routers.product-search-worker.entrypoints=websecure"
       - "traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt"

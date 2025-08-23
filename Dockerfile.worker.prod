@@ -1,4 +1,4 @@
-# Multi-stage build para produção - Worker
+# Multi-stage build para produção - Worker Versão Ultra Robusta
 FROM node:20-alpine AS builder
 
 # Instalar pnpm globalmente
@@ -22,15 +22,32 @@ RUN pnpm run build
 # Stage de produção
 FROM node:20-alpine AS production
 
-# Instalar dependências do sistema para Playwright
+# Atualizar repositórios primeiro
+RUN apk update
+
+# Instalar dependências básicas primeiro
 RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
     ca-certificates \
-    ttf-freefont
+    nss
+
+# Instalar dependências do Playwright uma por vez
+RUN apk add --no-cache chromium || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main chromium
+
+RUN apk add --no-cache freetype || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main freetype
+
+RUN apk add --no-cache freetype-dev || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main freetype-dev
+
+RUN apk add --no-cache harfbuzz || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main harfbuzz
+
+RUN apk add --no-cache ttf-freefont || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main ttf-freefont
+
+# Limpar cache
+RUN rm -rf /var/cache/apk/*
 
 # Definir variáveis de ambiente para o Playwright
 ENV PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
@@ -38,18 +55,11 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV NODE_ENV=production
 
 # Criar usuário não-root
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
 
 # Criar diretório da aplicação
 WORKDIR /app
-
-# Copiar arquivos de dependências
-COPY package.json pnpm-lock.yaml ./
-
-# Instalar apenas dependências de produção
-RUN npm install -g pnpm && \
-    pnpm install --prod --frozen-lockfile
 
 # Copiar código compilado do stage anterior
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
