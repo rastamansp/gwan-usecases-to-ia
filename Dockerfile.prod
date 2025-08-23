@@ -1,4 +1,4 @@
-# Multi-stage build para produção - Versão Ultra Robusta
+# Multi-stage build para produção - Versão Simplificada
 FROM node:20-alpine AS builder
 
 # Instalar pnpm globalmente
@@ -22,32 +22,15 @@ RUN pnpm run build
 # Stage de produção
 FROM node:20-alpine AS production
 
-# Atualizar repositórios primeiro
-RUN apk update
-
-# Instalar dependências básicas primeiro
+# Instalar dependências do Playwright diretamente sem update
 RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
     ca-certificates \
-    nss
-
-# Instalar dependências do Playwright uma por vez
-RUN apk add --no-cache chromium || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main chromium
-
-RUN apk add --no-cache freetype || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main freetype
-
-RUN apk add --no-cache freetype-dev || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main freetype-dev
-
-RUN apk add --no-cache harfbuzz || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main harfbuzz
-
-RUN apk add --no-cache ttf-freefont || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main ttf-freefont
-
-# Limpar cache
-RUN rm -rf /var/cache/apk/*
+    ttf-freefont
 
 # Definir variáveis de ambiente para o Playwright
 ENV PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
