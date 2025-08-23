@@ -1,0 +1,94 @@
+# Multi-stage build para produção com Git Clone - Versão Robusta
+FROM node:20-alpine AS builder
+
+# Atualizar repositórios e instalar dependências de forma mais robusta
+RUN apk update && \
+    apk add --no-cache --virtual .build-deps \
+        git \
+        ca-certificates \
+        openssh-client && \
+    npm install -g pnpm
+
+# Criar diretório da aplicação
+WORKDIR /app
+
+# Definir variáveis de ambiente para Git
+ARG GIT_REPO=https://github.com/rastamansp/gwan-usecases-to-ia.git
+ARG GIT_BRANCH=main
+
+# Clone do repositório com retry e fallback
+RUN set -e; \
+    for i in 1 2 3; do \
+        echo "Tentativa $i de clone do Git..."; \
+        if git clone --depth 1 --branch ${GIT_BRANCH} ${GIT_REPO} .; then \
+            echo "Clone do Git bem-sucedido!"; \
+            break; \
+        else \
+            echo "Tentativa $i falhou. Aguardando 5 segundos..."; \
+            if [ $i -lt 3 ]; then sleep 5; fi; \
+        fi; \
+    done; \
+    if [ ! -f "package.json" ]; then \
+        echo "ERRO: Falha em todas as tentativas de clone do Git"; \
+        exit 1; \
+    fi
+
+# Instalar dependências
+RUN pnpm install --frozen-lockfile
+
+# Build da aplicação
+RUN pnpm run build
+
+# Limpar dependências de build
+RUN apk del .build-deps
+
+# Stage de produção
+FROM node:20-alpine AS production
+
+# Instalar dependências do sistema para Playwright de forma robusta
+RUN apk update && \
+    apk add --no-cache --virtual .playwright-deps \
+        chromium \
+        nss \
+        freetype \
+        freetype-dev \
+        harfbuzz \
+        ca-certificates \
+        ttf-freefont && \
+    rm -rf /var/cache/apk/*
+
+# Definir variáveis de ambiente para o Playwright
+ENV PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV NODE_ENV=production
+
+# Criar usuário não-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
+
+# Criar diretório da aplicação
+WORKDIR /app
+
+# Copiar código compilado do stage anterior
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# Criar diretório para logs
+RUN mkdir -p logs/screenshots && \
+    chown -R nestjs:nodejs logs
+
+# Limpar dependências de build
+RUN apk del .playwright-deps
+
+# Mudar para usuário não-root
+USER nestjs
+
+# Expor porta
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Comando para produção
+CMD ["node", "dist/main"]

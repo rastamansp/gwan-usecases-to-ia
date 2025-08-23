@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  # Aplicação NestJS - Deploy Direto
+  # Aplicação NestJS com Git Clone - Versão Robusta
   app:
     build:
-      context: https://github.com/rastamansp/gwan-usecases-to-ia.git
-      dockerfile: Dockerfile.prod.robust
+      context: .
+      dockerfile: Dockerfile.prod.git.robust
     container_name: product-search-app-prod
     restart: unless-stopped
     networks:
@@ -19,6 +19,8 @@ services:
       - PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
       - PLAYWRIGHT_HEADLESS=true
       - PLAYWRIGHT_TIMEOUT=30000
+      - GIT_REPO=https://github.com/rastamansp/gwan-usecases-to-ia.git
+      - GIT_BRANCH=main
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/api`)"
@@ -29,6 +31,7 @@ services:
       - "traefik.http.routers.product-search-app.middlewares=product-search-app-stripprefix"
     volumes:
       - ./logs:/app/logs
+      - git-cache:/root/.git
     deploy:
       resources:
         limits:
@@ -38,11 +41,11 @@ services:
           memory: 512M
           cpus: '0.25'
 
-  # Worker Playwright - Deploy Direto
+  # Worker Playwright com Git Clone - Versão Robusta
   worker:
     build:
-      context: https://github.com/rastamansp/gwan-usecases-to-ia.git
-      dockerfile: Dockerfile.worker.prod.robust
+      context: .
+      dockerfile: Dockerfile.worker.prod.git.robust
     container_name: product-search-worker-prod
     restart: unless-stopped
     networks:
@@ -56,6 +59,8 @@ services:
       - PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
       - PLAYWRIGHT_HEADLESS=true
       - PLAYWRIGHT_TIMEOUT=30000
+      - GIT_REPO=https://github.com/rastamansp/gwan-usecases-to-ia.git
+      - GIT_BRANCH=main
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)"
@@ -66,6 +71,7 @@ services:
       - "traefik.http.routers.product-search-worker.middlewares=product-search-worker-stripprefix"
     volumes:
       - ./logs:/app/logs
+      - git-cache:/root/.git
     deploy:
       resources:
         limits:
@@ -74,6 +80,10 @@ services:
         reservations:
           memory: 512M
           cpus: '0.25'
+
+volumes:
+  git-cache:
+    driver: local
 
 networks:
   gwan:
