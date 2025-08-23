@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Aplicação NestJS - Teste Local
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: product-search-app-local
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:pazdedeus@postgres.gwan.com.br:5433/gwan_mart?sslmode=disable
+      - RABBITMQ_URL=amqp://root:pazdeDeus2025@rabbitmq.gwan.com.br:5672
+      - RABBITMQ_QUEUE_SEARCH_PRODUCT=search-product
+      - PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
+      - PLAYWRIGHT_HEADLESS=true
+      - PLAYWRIGHT_TIMEOUT=30000
+    volumes:
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # Worker Playwright - Teste Local
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker.prod
+    container_name: product-search-worker-local
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:pazdedeus@postgres.gwan.com.br:5433/gwan_mart?sslmode=disable
+      - RABBITMQ_URL=amqp://root:pazdeDeus2025@rabbitmq.gwan.com.br:5672
+      - RABBITMQ_QUEUE_SEARCH_PRODUCT=search-product
+      - PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
+      - PLAYWRIGHT_HEADLESS=true
+      - PLAYWRIGHT_TIMEOUT=30000
+    volumes:
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'

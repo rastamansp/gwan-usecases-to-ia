@@ -1,4 +1,4 @@
-# Multi-stage build para produção - Worker Versão Simplificada
+# Multi-stage build para produção - Worker Versão Estável
 FROM node:20-alpine AS builder
 
 # Instalar pnpm globalmente
@@ -22,15 +22,16 @@ RUN pnpm run build
 # Stage de produção
 FROM node:20-alpine AS production
 
-# Instalar dependências do Playwright diretamente sem update
-RUN apk add --no-cache \
+# Instalar dependências do sistema usando uma abordagem mais estável
+RUN apk add --no-cache --update \
     chromium \
     nss \
     freetype \
     freetype-dev \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
 
 # Definir variáveis de ambiente para o Playwright
 ENV PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
