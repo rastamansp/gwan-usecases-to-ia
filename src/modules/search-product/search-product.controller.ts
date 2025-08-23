@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { ExecuteProductSearchUseCase } from '../../shared/application/use-cases/execute-product-search.use-case';
 import { CreateSearchDto } from '../../shared/presentation/dto/create-search.dto';
 import { SearchResponseDto } from '../../shared/presentation/dto/search-response.dto';
+import { SearchResultsResponseDto, ProductResultDto, SearchInfoDto, SearchResultsDataDto } from '../../shared/presentation/dto/search-results-response.dto';
 import { ExecuteSearchCommand } from '../../shared/application/commands/execute-search.command';
 import { IProductRepository } from '../../shared/infrastructure/interfaces/product-repository.interface';
 
@@ -100,6 +101,94 @@ export class SearchProductController {
       }
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       throw new NotFoundException(`Erro ao recuperar status da busca: ${errorMessage}`);
+    }
+  }
+
+  @Get(':searchId/results')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obter resultados de uma busca',
+    description: 'Recupera todos os produtos encontrados em uma busca específica'
+  })
+  @ApiParam({
+    name: 'searchId',
+    description: 'ID único da busca',
+    example: 'bfc05476-0cd9-4371-b5e9-baaf9deaea0e'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultados da busca recuperados com sucesso',
+    type: SearchResultsResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Busca não encontrada ou sem resultados'
+  })
+  public async getSearchResults(
+    @Param('searchId') searchId: string,
+  ): Promise<SearchResultsResponseDto> {
+    try {
+      // Primeiro verificar se a busca existe
+      const search = await this.productRepository.findById(searchId);
+      
+      if (!search) {
+        throw new NotFoundException(`Busca com ID ${searchId} não encontrada`);
+      }
+
+      // Buscar os resultados dos produtos
+      const results = await this.productRepository.getResults(searchId);
+      
+      if (results.length === 0) {
+        const searchInfo = new SearchInfoDto();
+        searchInfo.createdAt = search.createdAt;
+        searchInfo.completedAt = search.completedAt;
+        searchInfo.maxResults = search.maxResults;
+
+        return SearchResultsResponseDto.fromResults(
+          search.id,
+          search.productName,
+          search.status,
+          [],
+          searchInfo,
+        );
+      }
+
+      // Formatar os resultados dos produtos
+      const formattedResults: ProductResultDto[] = results.map(result => {
+        const productResult = new ProductResultDto();
+        productResult.id = result.id;
+        productResult.title = result.title;
+        productResult.price = result.price;
+        productResult.originalPrice = result.originalPrice;
+        productResult.discountPercentage = result.discountPercentage;
+        productResult.sellerName = result.sellerName;
+        productResult.sellerRating = result.sellerRating;
+        productResult.freeShipping = result.freeShipping;
+        productResult.condition = result.condition;
+        productResult.imageUrl = result.imageUrl;
+        productResult.productUrl = result.productUrl;
+        productResult.createdAt = result.createdAt;
+        return productResult;
+      });
+
+      const searchInfo = new SearchInfoDto();
+      searchInfo.createdAt = search.createdAt;
+      searchInfo.completedAt = search.completedAt;
+      searchInfo.maxResults = search.maxResults;
+
+      return SearchResultsResponseDto.fromResults(
+        search.id,
+        search.productName,
+        search.status,
+        formattedResults,
+        searchInfo,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new NotFoundException(`Erro ao recuperar resultados da busca: ${errorMessage}`);
     }
   }
 }

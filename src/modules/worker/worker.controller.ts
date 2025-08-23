@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Param, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { WorkerService } from './worker.service';
 
@@ -104,15 +104,17 @@ export class WorkerController {
   })
   public async executeTestSearch(
     @Param('productName') productName: string,
+    @Query('maxResults') maxResults: number = 5,
   ): Promise<any> {
     try {
-      const results = await this.workerService.executeTestSearch(productName, 5);
+      const results = await this.workerService.executeTestSearch(productName, maxResults);
       return {
         statusCode: 200,
         message: 'Busca de teste executada com sucesso',
         data: {
           productName,
-          resultsCount: results.length,
+          maxResults,
+          resultsCount: results.results?.length || 0,
           results,
         },
         timestamp: new Date().toISOString(),

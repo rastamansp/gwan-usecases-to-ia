@@ -6,10 +6,10 @@ export class SearchResult {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'search_id', type: 'uuid' })
   searchId!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'product_id', type: 'varchar', length: 100, nullable: true })
   productId?: string;
 
   @Column({ type: 'varchar', length: 500 })
@@ -18,35 +18,35 @@ export class SearchResult {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   price?: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ name: 'original_price', type: 'decimal', precision: 10, scale: 2, nullable: true })
   originalPrice?: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @Column({ name: 'discount_percentage', type: 'decimal', precision: 5, scale: 2, nullable: true })
   discountPercentage?: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'seller_name', type: 'varchar', length: 255, nullable: true })
   sellerName?: string;
 
-  @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
+  @Column({ name: 'seller_rating', type: 'decimal', precision: 3, scale: 2, nullable: true })
   sellerRating?: number;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ name: 'free_shipping', type: 'boolean', default: false })
   freeShipping!: boolean;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   condition?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'image_url', type: 'text', nullable: true })
   imageUrl?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'product_url', type: 'text', nullable: true })
   productUrl?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
   @ManyToOne(() => ProductSearch, (search) => search.results)
-  @JoinColumn({ name: 'searchId' })
+  @JoinColumn({ name: 'search_id' })
   search!: ProductSearch;
 
   // Métodos de domínio

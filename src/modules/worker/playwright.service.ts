@@ -211,8 +211,10 @@ export class PlaywrightService {
       this.logger.log(`🔗 URL atual: ${currentUrl}`);
       
       // Capturar screenshot da página de resultados
-      await page.screenshot({ path: `search-results-${Date.now()}.png`, fullPage: true });
-      this.logger.log('📸 Screenshot da página de resultados salvo');
+      const timestamp = Date.now();
+      const screenshotPath = `logs/screenshots/search-results-${timestamp}.png`;
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      this.logger.log(`📸 Screenshot da página de resultados salvo: ${screenshotPath}`);
       
       this.logger.log('Busca executada com sucesso');
     } catch (error) {
@@ -226,18 +228,19 @@ export class PlaywrightService {
    */
   private async extractProductResults(page: Page, maxResults: number): Promise<ProductResult[]> {
     try {
-      this.logger.log('🔍 Iniciando extração de resultados de produtos...');
+      this.logger.log(`🔍 Iniciando extração de resultados de produtos (máximo: ${maxResults})...`);
       
       // Aguardar carregamento dos resultados
       await page.waitForTimeout(8000);
       
       // Capturar screenshot dos resultados para debug
       const timestamp = Date.now();
+      const screenshotPath = `logs/screenshots/search-results-${timestamp}.png`;
       await page.screenshot({ 
-        path: `search-results-${timestamp}.png`, 
+        path: screenshotPath, 
         fullPage: false 
       });
-      this.logger.log(`📸 Screenshot dos resultados salvo: search-results-${timestamp}.png`);
+      this.logger.log(`📸 Screenshot dos resultados salvo: ${screenshotPath}`);
       
       // Log da estrutura da página para debug
       const pageTitle = await page.title();
@@ -245,31 +248,106 @@ export class PlaywrightService {
       this.logger.log(`📄 Página atual: ${pageTitle}`);
       this.logger.log(`🔗 URL: ${pageUrl}`);
       
-      // Usar o seletor correto do Mercado Livre
-      this.logger.log('🔍 Procurando produtos com seletor correto...');
+      // Tentar múltiplos seletores para encontrar produtos
+      this.logger.log('🔍 Procurando produtos com múltiplos seletores...');
       
-      const productElements = await page.$$('.ui-search-result__wrapper');
-      this.logger.log(`📦 Encontrados ${productElements.length} produtos`);
+      let productElements: any[] = [];
+      
+      // Seletor principal baseado no HTML fornecido - lista ordenada de resultados
+      productElements = await page.$$('ol.ui-search-layout li.ui-search-layout__item');
+      this.logger.log(`📦 Seletor principal (ol.ui-search-layout li.ui-search-layout__item): ${productElements.length} produtos`);
+      
+      // Se não encontrou, tentar seletor mais específico
+      if (productElements.length === 0) {
+        productElements = await page.$$('ol.ui-search-layout--stack li.ui-search-layout__item');
+        this.logger.log(`📦 Seletor específico (ol.ui-search-layout--stack li.ui-search-layout__item): ${productElements.length} produtos`);
+      }
+      
+      // Se não encontrou, tentar seletor alternativo
+      if (productElements.length === 0) {
+        productElements = await page.$$('.ui-search-result__wrapper');
+        this.logger.log(`📦 Seletor alternativo (.ui-search-result__wrapper): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor mais genérico
+      if (productElements.length === 0) {
+        productElements = await page.$$('.ui-search-result');
+        this.logger.log(`📦 Seletor genérico (.ui-search-result): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor de itens individuais
+      if (productElements.length === 0) {
+        productElements = await page.$$('.ui-search-item');
+        this.logger.log(`📦 Seletor de itens (.ui-search-item): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor mais genérico
+      if (productElements.length === 0) {
+        productElements = await page.$$('li[class*="search"]');
+        this.logger.log(`📦 Seletor genérico (li[class*="search"]): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor de qualquer item da lista
+      if (productElements.length === 0) {
+        productElements = await page.$$('ol.ui-search-layout li');
+        this.logger.log(`📦 Seletor de lista (ol.ui-search-layout li): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor mais genérico de lista
+      if (productElements.length === 0) {
+        productElements = await page.$$('ol li');
+        this.logger.log(`📦 Seletor genérico de lista (ol li): ${productElements.length} produtos`);
+      }
       
       if (productElements.length === 0) {
-        this.logger.warn('Nenhum produto encontrado');
+        this.logger.warn('❌ Nenhum produto encontrado com nenhum seletor');
+        
+        // Log da estrutura da página para debug
+        const pageContent = await page.content();
+        this.logger.log(`📄 Conteúdo da página: ${pageContent.substring(0, 1000)}...`);
+        
+        // Tentar encontrar qualquer elemento que possa ser um produto
+        const allElements = await page.$$('*');
+        this.logger.log(`🔍 Total de elementos na página: ${allElements.length}`);
+        
+        // Verificar se há elementos com classes relacionadas a busca
+        const searchElements = await page.$$('[class*="search"]');
+        this.logger.log(`🔍 Elementos com "search" na classe: ${searchElements.length}`);
+        
+        const layoutElements = await page.$$('[class*="layout"]');
+        this.logger.log(`🔍 Elementos com "layout" na classe: ${layoutElements.length}`);
+        
         return [];
       }
       
-      // Selecionar apenas o primeiro produto para teste
-      const firstProduct = productElements[0];
-      this.logger.log('🎯 Selecionando primeiro produto para teste');
+      // Determinar quantos produtos extrair
+      const productsToExtract = Math.min(maxResults, productElements.length);
+      this.logger.log(`🎯 Extraindo ${productsToExtract} produtos (solicitado: ${maxResults}, disponível: ${productElements.length})`);
       
-      // Extrair dados do primeiro produto
-      const product = await this.extractProductData(firstProduct);
+      const results: ProductResult[] = [];
       
-      if (product) {
-        this.logger.log('✅ Primeiro produto extraído com sucesso');
-        return [product];
-      } else {
-        this.logger.warn('❌ Falha ao extrair dados do primeiro produto');
-        return [];
+      // Extrair dados dos produtos
+      for (let i = 0; i < productsToExtract; i++) {
+        try {
+          this.logger.log(`📦 Processando produto ${i + 1}/${productsToExtract}...`);
+          
+          const productElement = productElements[i];
+          const product = await this.extractProductData(productElement);
+          
+          if (product) {
+            results.push(product);
+            this.logger.log(`✅ Produto ${i + 1} extraído com sucesso: ${product.title.substring(0, 50)}...`);
+          } else {
+            this.logger.warn(`⚠️ Falha ao extrair dados do produto ${i + 1}`);
+          }
+        } catch (error) {
+          this.logger.error(`❌ Erro ao processar produto ${i + 1}:`, error);
+          // Continuar com o próximo produto
+        }
       }
+      
+      this.logger.log(`🎉 Extração concluída: ${results.length} produtos extraídos com sucesso`);
+      return results;
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -282,9 +360,22 @@ export class PlaywrightService {
    */
   private async extractProductData(productElement: any): Promise<ProductResult | null> {
     try {
-      // Extrair título - usar o seletor correto do Mercado Livre
+      // Extrair título - usar seletor correto baseado no HTML
       let title = 'Título não disponível';
-      const titleElement = await productElement.$('.poly-component__title');
+      let titleElement = await productElement.$('.ui-search-item__title');
+      
+      if (!titleElement) {
+        titleElement = await productElement.$('.poly-component__title');
+      }
+      
+      if (!titleElement) {
+        titleElement = await productElement.$('h2');
+      }
+      
+      if (!titleElement) {
+        titleElement = await productElement.$('a[title]');
+      }
+      
       if (titleElement) {
         const titleText = await titleElement.textContent();
         if (titleText && titleText.trim()) {
@@ -293,9 +384,22 @@ export class PlaywrightService {
         }
       }
 
-      // Extrair preço atual - usar o seletor correto
+      // Extrair preço atual - usar seletor correto baseado no HTML
       let price: number | undefined;
-      const priceElement = await productElement.$('.poly-price__current .andes-money-amount__fraction');
+      let priceElement = await productElement.$('.andes-money-amount__fraction');
+      
+      if (!priceElement) {
+        priceElement = await productElement.$('.poly-price__current .andes-money-amount__fraction');
+      }
+      
+      if (!priceElement) {
+        priceElement = await productElement.$('[data-testid="price"]');
+      }
+      
+      if (!priceElement) {
+        priceElement = await productElement.$('.ui-search-price__part');
+      }
+      
       if (priceElement) {
         const priceText = await priceElement.textContent();
         if (priceText) {
@@ -304,9 +408,18 @@ export class PlaywrightService {
         }
       }
 
-      // Extrair preço original (se houver desconto)
+      // Extrair preço original (se houver desconto) - usar seletor correto baseado no HTML
       let originalPrice: number | undefined;
-      const originalPriceElement = await productElement.$('.andes-money-amount--previous .andes-money-amount__fraction');
+      let originalPriceElement = await productElement.$('.andes-money-amount--previous .andes-money-amount__fraction');
+      
+      if (!originalPriceElement) {
+        originalPriceElement = await productElement.$('.andes-money-amount--previous');
+      }
+      
+      if (!originalPriceElement) {
+        originalPriceElement = await productElement.$('.ui-search-price__part--old');
+      }
+      
       if (originalPriceElement) {
         const originalPriceText = await originalPriceElement.textContent();
         if (originalPriceText) {
@@ -315,9 +428,44 @@ export class PlaywrightService {
         }
       }
 
-      // Extrair URL do produto - usar o seletor correto
+      // Extrair desconto diretamente do texto se disponível
+      let discountPercentage: number | undefined;
+      let discountElement = await productElement.$('.ui-search-price__discount');
+      
+      if (!discountElement) {
+        discountElement = await productElement.$('.andes-money-amount__discount');
+      }
+      
+      if (discountElement) {
+        const discountText = await discountElement.textContent();
+        if (discountText) {
+          // Extrair número do texto (ex: "11% OFF" -> 11)
+          const discountMatch = discountText.match(/(\d+)%/);
+          if (discountMatch) {
+            discountPercentage = parseFloat(discountMatch[1]);
+            this.logger.log(`✅ Desconto encontrado: ${discountPercentage}%`);
+          }
+        }
+      }
+      
+      // Se não encontrou desconto direto, calcular baseado nos preços
+      if (!discountPercentage && price && originalPrice && originalPrice > price) {
+        discountPercentage = ((originalPrice - price) / originalPrice) * 100;
+        this.logger.log(`✅ Desconto calculado: ${discountPercentage.toFixed(1)}%`);
+      }
+
+      // Extrair URL do produto - usar seletor correto baseado no HTML
       let productUrl = '';
-      const linkElement = await productElement.$('.poly-component__title');
+      let linkElement = await productElement.$('.ui-search-item__title');
+      
+      if (!linkElement) {
+        linkElement = await productElement.$('.poly-component__title');
+      }
+      
+      if (!linkElement) {
+        linkElement = await productElement.$('a[href]');
+      }
+      
       if (linkElement) {
         const href = await linkElement.getAttribute('href');
         if (href) {
@@ -326,44 +474,106 @@ export class PlaywrightService {
         }
       }
 
-      // Extrair imagem - usar o seletor correto
+      // Extrair imagem - usar seletor correto baseado no HTML
       let imageUrl = '';
-      const imageElement = await productElement.$('.poly-component__picture');
+      let imageElement = await productElement.$('.ui-search-result-image__element');
+      
+      if (!imageElement) {
+        imageElement = await productElement.$('.poly-component__picture');
+      }
+      
+      if (!imageElement) {
+        imageElement = await productElement.$('img[src]');
+      }
+      
       if (imageElement) {
-        const src = await imageElement.getAttribute('src');
-        if (src) {
+        // Priorizar data-src se src for base64 placeholder
+        let src = await imageElement.getAttribute('data-src');
+        if (!src || src.includes('data:image/gif;base64')) {
+          src = await imageElement.getAttribute('src');
+        }
+        
+        if (src && !src.includes('data:image/gif;base64')) {
           imageUrl = src;
           this.logger.log(`✅ Imagem encontrada: ${imageUrl.substring(0, 100)}...`);
         }
       }
 
-      // Extrair informações do vendedor - usar o seletor correto
+      // Extrair informações do vendedor - usar seletor correto baseado no HTML
       let sellerName = '';
-      const sellerElement = await productElement.$('.poly-component__seller');
+      let sellerElement = await productElement.$('.ui-search-item__seller');
+      
+      if (!sellerElement) {
+        sellerElement = await productElement.$('.poly-component__seller');
+      }
+      
+      if (!sellerElement) {
+        sellerElement = await productElement.$('.ui-search-item__seller-info');
+      }
+      
       if (sellerElement) {
         const sellerText = await sellerElement.textContent();
         if (sellerText && sellerText.trim()) {
-          sellerName = sellerText.trim();
+          // Remover prefixo "Por " se existir
+          sellerName = sellerText.trim().replace(/^Por\s+/, '');
           this.logger.log(`✅ Vendedor encontrado: ${sellerName}`);
         }
       }
 
-      // Verificar frete grátis - usar o seletor correto
+      // Extrair avaliação do vendedor
+      let sellerRating: number | undefined;
+      let ratingElement = await productElement.$('.poly-reviews__rating');
+      
+      if (!ratingElement) {
+        ratingElement = await productElement.$('.ui-search-item__rating');
+      }
+      
+      if (ratingElement) {
+        const ratingText = await ratingElement.textContent();
+        if (ratingText) {
+          // Extrair número do texto (ex: "5.0" -> 5.0)
+          const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
+          if (ratingMatch) {
+            sellerRating = parseFloat(ratingMatch[1]);
+            this.logger.log(`✅ Avaliação do vendedor encontrada: ${sellerRating}`);
+          }
+        }
+      }
+
+      // Verificar frete grátis - usar seletor correto baseado no HTML
       let freeShipping = false;
-      const shippingElement = await productElement.$('.poly-component__shipping');
+      let shippingElement = await productElement.$('.ui-search-item__shipping');
+      
+      if (!shippingElement) {
+        shippingElement = await productElement.$('.poly-component__shipping');
+      }
+      
+      if (!shippingElement) {
+        shippingElement = await productElement.$('.ui-search-item__shipping-info');
+      }
+      
       if (shippingElement) {
         const shippingText = await shippingElement.textContent();
-        if (shippingText && (shippingText.includes('Frete grátis') || shippingText.includes('Grátis'))) {
+        if (shippingText && (shippingText.includes('Frete grátis') || shippingText.includes('Grátis') || shippingText.includes('Gratuito'))) {
           freeShipping = true;
           this.logger.log(`✅ Frete grátis detectado`);
         }
       }
 
-      // Calcular desconto
-      let discountPercentage: number | undefined;
-      if (price && originalPrice && originalPrice > price) {
-        discountPercentage = ((originalPrice - price) / originalPrice) * 100;
-        this.logger.log(`✅ Desconto calculado: ${discountPercentage.toFixed(1)}%`);
+      // Extrair condição do produto
+      let condition = 'Novo'; // Padrão
+      let conditionElement = await productElement.$('.poly-component__item-condition');
+      
+      if (!conditionElement) {
+        conditionElement = await productElement.$('.ui-search-item__condition');
+      }
+      
+      if (conditionElement) {
+        const conditionText = await conditionElement.textContent();
+        if (conditionText && conditionText.trim()) {
+          condition = conditionText.trim();
+          this.logger.log(`✅ Condição encontrada: ${condition}`);
+        }
       }
 
       // Log dos dados extraídos para debug
@@ -371,11 +581,13 @@ export class PlaywrightService {
         title: title.substring(0, 50) + (title.length > 50 ? '...' : ''),
         price,
         originalPrice,
+        discountPercentage,
         productUrl: productUrl.substring(0, 100) + (productUrl.length > 100 ? '...' : ''),
         imageUrl: imageUrl.substring(0, 100) + (imageUrl.length > 100 ? '...' : ''),
         sellerName,
+        sellerRating,
         freeShipping,
-        discountPercentage
+        condition
       });
 
       return {
@@ -384,8 +596,9 @@ export class PlaywrightService {
         originalPrice,
         discountPercentage,
         sellerName: sellerName?.trim(),
+        sellerRating,
         freeShipping,
-        condition: 'Novo', // Assumir como novo por padrão
+        condition,
         imageUrl,
         productUrl,
       };
@@ -402,15 +615,54 @@ export class PlaywrightService {
     if (!priceText) return undefined;
     
     try {
-      // Remover caracteres não numéricos exceto vírgula e ponto
-      const cleanPrice = priceText.replace(/[^\d,.]/g, '');
+      this.logger.debug(`🔍 Extraindo preço de: "${priceText}"`);
       
-      // Converter vírgula para ponto (formato brasileiro)
-      const normalizedPrice = cleanPrice.replace(',', '.');
+      // Remover caracteres não numéricos exceto vírgula, ponto e R$
+      let cleanPrice = priceText.replace(/[^\d,.]/g, '');
       
-      const price = parseFloat(normalizedPrice);
-      return isNaN(price) ? undefined : price;
+      // Se não há números, retornar undefined
+      if (!cleanPrice || cleanPrice === '') {
+        this.logger.debug(`❌ Nenhum número encontrado em: "${priceText}"`);
+        return undefined;
+      }
+      
+      // Formato brasileiro: ponto é separador de milhares, vírgula é separador decimal
+      // Exemplos: "9.500" -> 9500, "19.477,73" -> 19477.73, "477,73" -> 477.73
+      if (cleanPrice.includes(',')) {
+        // Se tem vírgula, é separador decimal
+        if (cleanPrice.includes('.')) {
+          // Exemplo: "19.477,73" -> "19477.73"
+          cleanPrice = cleanPrice.replace(/\./g, '').replace(',', '.');
+        } else {
+          // Exemplo: "477,73" -> "477.73"
+          cleanPrice = cleanPrice.replace(',', '.');
+        }
+      } else if (cleanPrice.includes('.')) {
+        // Se só tem ponto e não tem vírgula, verificar se é separador de milhares
+        // Exemplo: "9.500" -> "9500"
+        // Se o número após o ponto tem 3 dígitos, provavelmente é separador de milhares
+        const parts = cleanPrice.split('.');
+        if (parts.length === 2 && parts[1].length === 3) {
+          // Provavelmente separador de milhares: "9.500" -> "9500"
+          cleanPrice = cleanPrice.replace('.', '');
+        }
+        // Se não, manter como está (pode ser decimal como "9.50")
+      }
+      
+      // Verificar se é um número válido
+      const price = parseFloat(cleanPrice);
+      
+      if (isNaN(price) || price <= 0) {
+        this.logger.debug(`❌ Preço inválido após conversão: ${price} de "${priceText}"`);
+        return undefined;
+      }
+      
+      // Log para debug
+      this.logger.debug(`✅ Preço extraído: "${priceText}" -> ${price}`);
+      
+      return price;
     } catch (error) {
+      this.logger.warn(`❌ Erro ao extrair preço de "${priceText}":`, error);
       return undefined;
     }
   }
@@ -421,10 +673,10 @@ export class PlaywrightService {
   private async captureErrorScreenshot(page: Page, productName: string): Promise<void> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `error-${productName}-${timestamp}.png`;
+      const filename = `logs/screenshots/error-${productName}-${timestamp}.png`;
       
       await page.screenshot({
-        path: `logs/screenshots/${filename}`,
+        path: filename,
         fullPage: true,
       });
       
@@ -446,7 +698,7 @@ export class PlaywrightService {
       }
 
       this.logger.log(`Iniciando busca de teste por: ${productName}`);
-      this.logger.log(`🎯 Objetivo: Extrair apenas o primeiro produto encontrado`);
+      this.logger.log(`🎯 Objetivo: Extrair até ${maxResults} produtos encontrados`);
       
       page = await this.context!.newPage();
       
@@ -459,19 +711,153 @@ export class PlaywrightService {
       // Executar busca
       await this.performSearch(page, productName);
       
-      // Extrair apenas o primeiro resultado
-      const results = await this.extractProductResults(page, 1);
+      // Aguardar carregamento dos resultados
+      await page.waitForTimeout(8000);
       
-      if (results.length > 0) {
-        this.logger.log(`🎉 Teste concluído com sucesso! Primeiro produto extraído:`);
-        this.logger.log(`   Nome: ${results[0].title}`);
-        this.logger.log(`   Preço: R$ ${results[0].price}`);
-        this.logger.log(`   URL: ${results[0].productUrl}`);
-      } else {
-        this.logger.log(`⚠️ Teste concluído, mas nenhum produto foi extraído`);
+      // Capturar screenshot da página completa
+      const timestamp = Date.now();
+      const screenshotPath = `logs/screenshots/test-search-results-${timestamp}.png`;
+      await page.screenshot({ 
+        path: screenshotPath, 
+        fullPage: true 
+      });
+      this.logger.log(`📸 Screenshot completo salvo: ${screenshotPath}`);
+      
+      // Log da estrutura da página para debug
+      const pageTitle = await page.title();
+      const pageUrl = page.url();
+      this.logger.log(`📄 Página atual: ${pageTitle}`);
+      this.logger.log(`🔗 URL: ${pageUrl}`);
+      
+      // Verificar se há algum conteúdo na página
+      const pageContent = await page.content();
+      this.logger.log(`📄 Tamanho da página: ${pageContent.length} caracteres`);
+      
+      // Tentar múltiplos seletores para encontrar produtos
+      this.logger.log('🔍 Procurando produtos com múltiplos seletores...');
+      
+      let productElements: any[] = [];
+      
+      // Seletor principal baseado no HTML fornecido - lista ordenada de resultados
+      productElements = await page.$$('ol.ui-search-layout li.ui-search-layout__item');
+      this.logger.log(`📦 Seletor principal (ol.ui-search-layout li.ui-search-layout__item): ${productElements.length} produtos`);
+      
+      // Se não encontrou, tentar seletor mais específico
+      if (productElements.length === 0) {
+        productElements = await page.$$('ol.ui-search-layout--stack li.ui-search-layout__item');
+        this.logger.log(`📦 Seletor específico (ol.ui-search-layout--stack li.ui-search-layout__item): ${productElements.length} produtos`);
       }
       
-      return results;
+      // Se não encontrou, tentar seletor alternativo
+      if (productElements.length === 0) {
+        productElements = await page.$$('.ui-search-result__wrapper');
+        this.logger.log(`📦 Seletor alternativo (.ui-search-result__wrapper): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor mais genérico
+      if (productElements.length === 0) {
+        productElements = await page.$$('.ui-search-result');
+        this.logger.log(`📦 Seletor genérico (.ui-search-result): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor de itens individuais
+      if (productElements.length === 0) {
+        productElements = await page.$$('.ui-search-item');
+        this.logger.log(`📦 Seletor de itens (.ui-search-item): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor mais genérico
+      if (productElements.length === 0) {
+        productElements = await page.$$('li[class*="search"]');
+        this.logger.log(`📦 Seletor genérico (li[class*="search"]): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor de qualquer item da lista
+      if (productElements.length === 0) {
+        productElements = await page.$$('ol.ui-search-layout li');
+        this.logger.log(`📦 Seletor de lista (ol.ui-search-layout li): ${productElements.length} produtos`);
+      }
+      
+      // Se ainda não encontrou, tentar seletor mais genérico de lista
+      if (productElements.length === 0) {
+        productElements = await page.$$('ol li');
+        this.logger.log(`📦 Seletor genérico de lista (ol li): ${productElements.length} produtos`);
+      }
+      
+      if (productElements.length === 0) {
+        this.logger.warn('❌ Nenhum produto encontrado com nenhum seletor');
+        
+        // Log da estrutura da página para debug
+        const pageContent = await page.content();
+        this.logger.log(`📄 Conteúdo da página: ${pageContent.substring(0, 1000)}...`);
+        
+        // Tentar encontrar qualquer elemento que possa ser um produto
+        const allElements = await page.$$('*');
+        this.logger.log(`🔍 Total de elementos na página: ${allElements.length}`);
+        
+        // Verificar se há elementos com classes relacionadas a busca
+        const searchElements = await page.$$('[class*="search"]');
+        this.logger.log(`🔍 Elementos com "search" na classe: ${searchElements.length}`);
+        
+        const layoutElements = await page.$$('[class*="layout"]');
+        this.logger.log(`🔍 Elementos com "layout" na classe: ${layoutElements.length}`);
+        
+        return {
+          success: false,
+          message: 'Nenhum produto encontrado',
+          debug: {
+            pageTitle,
+            pageUrl,
+            pageSize: pageContent.length,
+            totalElements: allElements.length,
+            searchElements: searchElements.length,
+            layoutElements: layoutElements.length
+          }
+        };
+      }
+      
+      // Determinar quantos produtos extrair
+      const productsToExtract = Math.min(maxResults, productElements.length);
+      this.logger.log(`🎯 Extraindo ${productsToExtract} produtos (solicitado: ${maxResults}, disponível: ${productElements.length})`);
+      
+      const results: ProductResult[] = [];
+      
+      // Extrair dados dos produtos
+      for (let i = 0; i < productsToExtract; i++) {
+        try {
+          this.logger.log(`📦 Processando produto ${i + 1}/${productsToExtract}...`);
+          
+          const productElement = productElements[i];
+          const product = await this.extractProductData(productElement);
+          
+          if (product) {
+            results.push(product);
+            this.logger.log(`✅ Produto ${i + 1} extraído com sucesso: ${product.title.substring(0, 50)}...`);
+          } else {
+            this.logger.warn(`⚠️ Falha ao extrair dados do produto ${i + 1}`);
+          }
+        } catch (error) {
+          this.logger.error(`❌ Erro ao processar produto ${i + 1}:`, error);
+          // Continuar com o próximo produto
+        }
+      }
+      
+      this.logger.log(`🎉 Teste concluído: ${results.length} produtos extraídos com sucesso`);
+      
+      return {
+        success: true,
+        totalFound: productElements.length,
+        totalExtracted: results.length,
+        requested: maxResults,
+        results,
+        debug: {
+          pageTitle,
+          pageUrl,
+          pageSize: pageContent.length,
+          productElementsFound: productElements.length
+        }
+      };
+      
     } catch (error) {
       this.logger.error(`❌ Erro durante busca de teste: ${productName}`, error);
       
@@ -542,8 +928,10 @@ export class PlaywrightService {
       }
       
       // Capturar screenshot da página
-      await page.screenshot({ path: `test-navigation-${Date.now()}.png`, fullPage: true });
-      this.logger.log('📸 Screenshot da página salvo');
+      const timestamp = Date.now();
+      const screenshotPath = `logs/screenshots/test-navigation-${timestamp}.png`;
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      this.logger.log(`📸 Screenshot da página salvo: ${screenshotPath}`);
       
       return {
         success: true,

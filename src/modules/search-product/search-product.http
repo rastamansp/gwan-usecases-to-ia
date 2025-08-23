@@ -79,3 +79,9 @@ GET http://localhost:3001/api/search-product/03140561-dfde-4997-81b6-9f5ccc2ad85
 
 ### Consultar busca específica (substitua pelo ID real)
 GET http://localhost:3001/api/search-product/03140561-dfde-4997-81b6-9f5ccc2ad85b
+
+### Obter resultados da busca (substitua pelo ID real)
+GET http://localhost:3001/api/search-product/03140561-dfde-4997-81b6-9f5ccc2ad85b/results
+
+### Obter resultados da busca IPAD pro M4 516gb (ID real da sua busca)
+GET http://localhost:3001/api/search-product/c4532f29-104d-4328-9669-de038d1b7988/results

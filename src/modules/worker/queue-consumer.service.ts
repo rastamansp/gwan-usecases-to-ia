@@ -244,15 +244,29 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
         const searchResult = new SearchResult();
         searchResult.searchId = searchId;
         searchResult.title = result.title;
-        searchResult.price = result.price;
-        searchResult.originalPrice = result.originalPrice;
-        searchResult.discountPercentage = result.discountPercentage;
+        
+        // Converter preços para números, garantindo que sejam válidos
+        searchResult.price = result.price !== undefined && result.price !== null ? Number(result.price) : undefined;
+        searchResult.originalPrice = result.originalPrice !== undefined && result.originalPrice !== null ? Number(result.originalPrice) : undefined;
+        searchResult.discountPercentage = result.discountPercentage !== undefined && result.discountPercentage !== null ? Number(result.discountPercentage) : undefined;
+        
         searchResult.sellerName = result.sellerName;
-        searchResult.sellerRating = result.sellerRating;
+        
+        // Converter avaliação para número
+        searchResult.sellerRating = result.sellerRating !== undefined && result.sellerRating !== null ? Number(result.sellerRating) : undefined;
+        
         searchResult.freeShipping = result.freeShipping;
         searchResult.condition = result.condition;
         searchResult.imageUrl = result.imageUrl;
         searchResult.productUrl = result.productUrl;
+        
+        // Log para debug
+        this.logger.debug(`Mapeando resultado: ${result.title.substring(0, 50)}...`);
+        this.logger.debug(`  Preço: ${result.price} -> ${searchResult.price}`);
+        this.logger.debug(`  Preço Original: ${result.originalPrice} -> ${searchResult.originalPrice}`);
+        this.logger.debug(`  Desconto: ${result.discountPercentage} -> ${searchResult.discountPercentage}`);
+        this.logger.debug(`  Avaliação: ${result.sellerRating} -> ${searchResult.sellerRating}`);
+        
         return searchResult;
       });
 

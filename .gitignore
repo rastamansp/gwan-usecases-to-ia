@@ -6,6 +6,13 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Screenshots e arquivos de debug do Playwright
+logs/screenshots/
+*.png
+search-results-*.png
+test-search-results-*.png
+error-*.png
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 

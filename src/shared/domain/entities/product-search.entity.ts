@@ -7,34 +7,34 @@ export class ProductSearch {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'product_name', type: 'varchar', length: 255 })
   productName!: string;
 
   @Column({ type: 'varchar', length: 50, default: SearchStatus.QUEUED })
   status!: SearchStatus;
 
-  @Column({ type: 'int', default: 50 })
+  @Column({ name: 'max_results', type: 'int', default: 50 })
   maxResults!: number;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   category?: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ name: 'price_min', type: 'decimal', precision: 10, scale: 2, nullable: true })
   priceMin?: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ name: 'price_max', type: 'decimal', precision: 10, scale: 2, nullable: true })
   priceMax?: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt?: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage?: string;
 
   @OneToMany(() => SearchResult, (result: SearchResult) => result.search)

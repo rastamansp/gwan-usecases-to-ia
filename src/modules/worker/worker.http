@@ -12,3 +12,12 @@ POST http://localhost:3000/api/worker/restart-browser
 
 ### Executar busca de teste
 POST http://localhost:3000/api/worker/test-search/PS5
+
+### Executar busca de teste com 10 produtos
+POST http://localhost:3001/api/worker/test-search/iPhone%2015%20Pro?maxResults=10
+
+### Executar busca de teste com 5 produtos (padrão)
+POST http://localhost:3001/api/worker/test-search/iPhone%2015%20Pro
+
+### Executar busca de teste com 20 produtos
+POST http://localhost:3001/api/worker/test-search/iPhone%2015%20Pro?maxResults=20

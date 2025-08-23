@@ -46,11 +46,16 @@ Este projeto implementa um sistema que permite aos usuários solicitar buscas de
 - **Logging**: Winston estruturado
 - **Clean Architecture**: Implementada
 - **SOLID Principles**: Aplicados
+- **Worker Playwright**: Automação web para busca de produtos ✅
+- **Consumer RabbitMQ**: Processamento das filas ✅
+- **Extração de Múltiplos Produtos**: Suporte a maxResults configurável ✅
+- **Correção de Preços Brasileiros**: Formato R$ 9.500 → 9500.00 ✅
+- **Organização de Screenshots**: Pasta logs/screenshots/ estruturada ✅
+- **Configuração .gitignore**: Screenshots e arquivos de debug ignorados ✅
 
 ### 🚧 **EM DESENVOLVIMENTO**
-- **Worker Playwright**: Automação web para busca de produtos
-- **Consumer RabbitMQ**: Processamento das filas
-- **Endpoints Adicionais**: Status de busca e resultados
+- **Endpoints Adicionais**: Status de busca e resultados ✅
+- **Testes de Integração**: Validação end-to-end ✅
 
 ### 📋 **PENDENTE**
 - **Testes Unitários**: Jest para lógica de negócio
@@ -297,8 +302,51 @@ curl -X POST http://localhost:3000/api/search-product \
 # Verificar status da busca
 curl http://localhost:3000/api/search-product/{searchId}
 
-# Ver resultados
+# Ver resultados da busca
 curl http://localhost:3000/api/search-product/{searchId}/results
+```
+
+## 🆕 **Melhorias Implementadas (v1.1.0)**
+
+### 🎯 **Extração de Múltiplos Produtos**
+- ✅ **Suporte a maxResults configurável**: Busca de 1 a 50+ produtos
+- ✅ **Seletores CSS robustos**: Múltiplos fallbacks para diferentes layouts
+- ✅ **Extração paralela**: Processamento eficiente de múltiplos produtos
+- ✅ **Logs detalhados**: Acompanhamento completo do processo de extração
+
+### 💰 **Correção de Preços Brasileiros**
+- ✅ **Formato brasileiro reconhecido**: R$ 9.500 → 9500.00
+- ✅ **Separadores corretos**: Ponto como milhares, vírgula como decimal
+- ✅ **Conversão automática**: Valores salvos como números no banco
+- ✅ **Validação robusta**: Tratamento de diferentes formatos de preço
+
+### 📸 **Organização de Screenshots**
+- ✅ **Estrutura organizada**: `logs/screenshots/` para todos os arquivos
+- ✅ **Nomenclatura consistente**: Timestamps e tipos organizados
+- ✅ **Git ignore configurado**: Screenshots não versionados
+- ✅ **Debug facilitado**: Fácil localização para análise de problemas
+
+### 🔧 **Configurações Técnicas**
+- ✅ **Seletores CSS otimizados**: Baseados no HTML real do Mercado Livre
+- ✅ **Fallbacks robustos**: Múltiplas estratégias de extração
+- ✅ **Logs estruturados**: Informações detalhadas para debugging
+- ✅ **Tratamento de erros**: Captura de screenshots em caso de falha
+
+### 📊 **Exemplo de Funcionamento**
+```bash
+# Busca com 10 produtos
+curl -X POST http://localhost:3001/api/search-product \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productName": "iPhone 16 Pro Max",
+    "maxResults": 10
+  }'
+
+# Resultado: 10 produtos extraídos com preços corretos
+# - iPhone 16 Pro Max (256 GB): R$ 10.306,00
+# - iPhone 16 Pro Max (512 GB): R$ 11.199,00
+# - iPhone 16 Pro Max (256 GB): R$ 7.899,00
+# ... e mais 7 produtos
 ```
 
 ## 🔌 API

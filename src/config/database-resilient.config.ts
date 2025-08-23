@@ -31,8 +31,8 @@ export const getDatabaseResilientConfig = (configService: ConfigService): TypeOr
   if (nodeEnv === 'development') {
     return {
       ...baseConfig,
-      synchronize: true,
-      logging: ['error', 'warn'],
+      synchronize: false, // Desabilitado para evitar recriação automática das tabelas
+      logging: ['error', 'warn', 'query'], // Adicionar 'query' para debug
       ssl: false,
     };
   }
