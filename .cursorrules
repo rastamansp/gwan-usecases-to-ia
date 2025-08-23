@@ -1,0 +1,500 @@
+# 🚀 Cursor Rules - Sistema de Automação de Busca de Produtos
+
+## 📋 Visão Geral do Projeto
+
+Este é um projeto NestJS com TypeScript que implementa um sistema de automação de busca de produtos usando Playwright e RabbitMQ. O projeto segue os princípios de Clean Architecture, SOLID e Use Cases.
+
+## 🚫 **REGRAS CRÍTICAS - NUNCA VIOLAR**
+
+### ❌ **NUNCA desabilitar funcionalidades essenciais:**
+- ❌ **NUNCA** comentar TypeORM ou banco de dados
+- ❌ **NUNCA** remover validações de entrada
+- ❌ **NUNCA** desabilitar logging ou tratamento de erros
+- ❌ **NUNCA** remover interfaces ou abstrações
+- ❌ **NUNCA** usar `any` type ou `console.log`
+- ❌ **NUNCA** fazer operações síncronas bloqueantes
+
+### ✅ **SEMPRE corrigir problemas de configuração:**
+- ✅ **SEMPRE** verificar variáveis de ambiente
+- ✅ **SEMPRE** configurar conexões de banco corretamente
+- ✅ **SEMPRE** implementar fallbacks e retry logic
+- ✅ **SEMPRE** usar logging estruturado para debug
+- ✅ **SEMPRE** seguir princípios de resiliência
+
+## 🏗️ Arquitetura e Padrões
+
+### Clean Architecture
+- **Entities**: Regras de negócio centrais
+- **Use Cases**: Casos de uso da aplicação
+- **Interface Adapters**: Controllers, Repositories, External Services
+- **Frameworks & Drivers**: NestJS, Database, RabbitMQ, Playwright
+
+### SOLID Principles
+- **S**: Single Responsibility Principle
+- **O**: Open/Closed Principle
+- **L**: Liskov Substitution Principle
+- **I**: Interface Segregation Principle
+- **D**: Dependency Inversion Principle
+
+### Design Patterns
+- **Repository Pattern**: Para acesso a dados
+- **Factory Pattern**: Para criação de objetos complexos
+- **Strategy Pattern**: Para diferentes estratégias de busca
+- **Observer Pattern**: Para notificações de eventos
+- **Command Pattern**: Para operações de busca
+
+## 📁 Estrutura de Pastas
+
+```
+src/
+├── main.ts                           # Ponto de entrada
+├── app.module.ts                     # Módulo principal
+├── shared/                           # Código compartilhado
+│   ├── domain/                       # Entidades e regras de negócio
+│   ├── infrastructure/               # Implementações externas
+│   ├── application/                  # Casos de uso
+│   └── presentation/                 # Controllers e DTOs
+├── modules/                          # Módulos da aplicação
+│   ├── search-product/               # Módulo de busca de produtos
+│   ├── worker/                       # Módulo do worker Playwright
+│   └── queue/                        # Módulo de filas RabbitMQ
+├── config/                           # Configurações
+└── common/                           # Utilitários e decorators
+```
+
+## 🔧 Padrões de Código
+
+### Nomenclatura
+- **Classes**: PascalCase (ex: `ProductSearchService`)
+- **Interfaces**: PascalCase com prefixo I (ex: `IProductRepository`)
+- **Métodos**: camelCase (ex: `executeSearch`)
+- **Variáveis**: camelCase (ex: `searchResults`)
+- **Constantes**: UPPER_SNAKE_CASE (ex: `MAX_RESULTS`)
+- **Arquivos**: kebab-case (ex: `product-search.service.ts`)
+
+### Estrutura de Classes
+```typescript
+// Sempre usar decorators do NestJS
+@Injectable()
+export class ProductSearchService {
+  constructor(
+    private readonly productRepository: IProductRepository,
+    private readonly queueService: IQueueService,
+  ) {}
+
+  // Métodos públicos primeiro
+  public async executeSearch(searchData: CreateSearchDto): Promise<SearchResult> {
+    // Implementação
+  }
+
+  // Métodos privados depois
+  private async validateSearchData(data: CreateSearchDto): Promise<void> {
+    // Validação
+  }
+}
+```
+
+### DTOs e Validação
+```typescript
+// Sempre usar class-validator
+export class CreateSearchDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  productName: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  maxResults?: number;
+}
+```
+
+### Interfaces e Abstrações
+```typescript
+// Sempre definir interfaces para dependências
+export interface IProductRepository {
+  save(product: Product): Promise<Product>;
+  findById(id: string): Promise<Product | null>;
+}
+
+// Implementar com classes concretas
+@Injectable()
+export class ProductRepository implements IProductRepository {
+  // Implementação
+}
+```
+
+## 🎯 Padrões de Use Cases
+
+### Estrutura de Use Case
+```typescript
+@Injectable()
+export class ExecuteProductSearchUseCase {
+  constructor(
+    private readonly productRepository: IProductRepository,
+    private readonly queueService: IQueueService,
+    private readonly logger: ILogger,
+  ) {}
+
+  public async execute(command: ExecuteSearchCommand): Promise<ExecuteSearchResult> {
+    try {
+      // 1. Validação
+      await this.validateCommand(command);
+      
+      // 2. Execução da lógica de negócio
+      const result = await this.processSearch(command);
+      
+      // 3. Persistência
+      await this.saveResult(result);
+      
+      // 4. Notificação
+      await this.notifyCompletion(result);
+      
+      return result;
+    } catch (error) {
+      this.logger.error('Erro ao executar busca', { command, error });
+      throw new SearchExecutionError(error.message);
+    }
+  }
+
+  private async validateCommand(command: ExecuteSearchCommand): Promise<void> {
+    // Validação específica do use case
+  }
+
+  private async processSearch(command: ExecuteSearchCommand): Promise<SearchResult> {
+    // Lógica de negócio principal
+  }
+}
+```
+
+## 🔌 Padrões do NestJS
+
+### Módulos
+```typescript
+@Module({
+  imports: [
+    // Módulos externos primeiro
+    TypeOrmModule.forFeature([ProductSearch]),
+    
+    // Módulos internos depois
+    QueueModule,
+    WorkerModule,
+  ],
+  controllers: [ProductSearchController],
+  providers: [
+    // Use Cases
+    ExecuteProductSearchUseCase,
+    
+    // Services
+    ProductSearchService,
+    
+    // Repositories
+    {
+      provide: IProductRepository,
+      useClass: ProductRepository,
+    },
+  ],
+  exports: [ProductSearchService],
+})
+export class ProductSearchModule {}
+```
+
+### Controllers
+```typescript
+@Controller('search-product')
+export class ProductSearchController {
+  constructor(
+    private readonly executeSearchUseCase: ExecuteProductSearchUseCase,
+  ) {}
+
+  @Post()
+  @HttpCode(202)
+  public async createSearch(
+    @Body() createSearchDto: CreateSearchDto,
+  ): Promise<CreateSearchResponseDto> {
+    const command = new ExecuteSearchCommand(createSearchDto);
+    const result = await this.executeSearchUseCase.execute(command);
+    
+    return CreateSearchResponseDto.fromResult(result);
+  }
+}
+```
+
+### Arquivos .http para Testes
+Cada API criada deve ter um arquivo `.http` correspondente para facilitar os testes via REST Client.
+
+**Estrutura dos arquivos .http:**
+```
+src/
+├── modules/
+│   ├── search-product/
+│   │   ├── search-product.controller.ts
+│   │   └── search-product.http          # Arquivo de testes da API
+│   └── worker/
+│       ├── worker.controller.ts
+│       └── worker.http                  # Arquivo de testes da API
+```
+
+**Exemplo de arquivo .http:**
+```http
+### Criar nova busca de produto
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "PS5",
+  "maxResults": 50
+}
+
+### Obter status da busca
+GET http://localhost:3000/api/search-product/{{searchId}}
+
+### Obter resultados da busca
+GET http://localhost:3000/api/search-product/{{searchId}}/results
+
+### Listar todas as buscas
+GET http://localhost:3000/api/search-product?page=1&limit=10
+```
+
+## 🗄️ Padrões de Banco de Dados
+
+### Entities
+```typescript
+@Entity('product_searches')
+export class ProductSearch {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  productName: string;
+
+  @Column({ type: 'varchar', length: 50, default: 'queued' })
+  status: SearchStatus;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  // Métodos de domínio
+  public markAsProcessing(): void {
+    this.status = SearchStatus.PROCESSING;
+  }
+
+  public markAsCompleted(): void {
+    this.status = SearchStatus.COMPLETED;
+    this.completedAt = new Date();
+  }
+}
+```
+
+## 🚀 Padrões de Configuração
+
+### Environment Variables
+```typescript
+// Sempre usar ConfigService
+@Injectable()
+export class AppConfig {
+  constructor(private configService: ConfigService) {}
+
+  get databaseUrl(): string {
+    return this.configService.get<string>('DATABASE_URL');
+  }
+
+  get rabbitMqUrl(): string {
+    return this.configService.get<string>('RABBITMQ_URL');
+  }
+}
+```
+
+### Dependency Injection
+```typescript
+// Sempre usar interfaces para dependências
+@Injectable()
+export class ProductSearchService {
+  constructor(
+    @Inject(IProductRepository)
+    private readonly productRepository: IProductRepository,
+    
+    @Inject(IQueueService)
+    private readonly queueService: IQueueService,
+  ) {}
+}
+```
+
+## 📝 Padrões de Logging
+
+### Estrutura de Logs
+```typescript
+// Sempre usar logs estruturados
+@Injectable()
+export class ProductSearchService {
+  constructor(private readonly logger: ILogger) {}
+
+  public async executeSearch(searchData: CreateSearchDto): Promise<void> {
+    this.logger.info('Iniciando busca de produto', {
+      productName: searchData.productName,
+      maxResults: searchData.maxResults,
+      timestamp: new Date().toISOString(),
+    });
+
+    try {
+      // Execução
+      this.logger.info('Busca executada com sucesso', { searchId: result.id });
+    } catch (error) {
+      this.logger.error('Erro ao executar busca', {
+        productName: searchData.productName,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
+  }
+}
+```
+
+## 🧪 Padrões de Testes (Futuro)
+
+### Estrutura de Testes
+```typescript
+// Testes unitários para use cases
+describe('ExecuteProductSearchUseCase', () => {
+  let useCase: ExecuteProductSearchUseCase;
+  let mockRepository: jest.Mocked<IProductRepository>;
+
+  beforeEach(() => {
+    mockRepository = createMockRepository();
+    useCase = new ExecuteProductSearchUseCase(mockRepository);
+  });
+
+  it('should execute search successfully', async () => {
+    // Arrange
+    const command = new ExecuteSearchCommand({ productName: 'PS5' });
+    
+    // Act
+    const result = await useCase.execute(command);
+    
+    // Assert
+    expect(result).toBeDefined();
+    expect(mockRepository.save).toHaveBeenCalled();
+  });
+});
+```
+
+## 🔒 Padrões de Segurança
+
+### Validação de Entrada
+- Sempre validar DTOs com class-validator
+- Usar transformadores para sanitização
+- Implementar rate limiting
+- Validar tipos de dados
+
+### Tratamento de Erros
+```typescript
+// Sempre usar custom exceptions
+export class SearchExecutionError extends Error {
+  constructor(message: string, public readonly code: string) {
+    super(message);
+    this.name = 'SearchExecutionError';
+  }
+}
+
+// E filtros de exceção
+@Catch(SearchExecutionError)
+export class SearchExecutionFilter implements ExceptionFilter {
+  catch(exception: SearchExecutionError, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    
+    response.status(400).json({
+      statusCode: 400,
+      message: exception.message,
+      code: exception.code,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+```
+
+## 📊 Padrões de Performance
+
+### Otimizações
+- Usar lazy loading quando apropriado
+- Implementar cache para dados frequentemente acessados
+- Usar paginação para grandes conjuntos de dados
+- Implementar timeouts para operações externas
+
+### Monitoramento
+```typescript
+// Sempre medir performance de operações críticas
+@Injectable()
+export class ProductSearchService {
+  public async executeSearch(searchData: CreateSearchDto): Promise<SearchResult> {
+    const startTime = Date.now();
+    
+    try {
+      const result = await this.performSearch(searchData);
+      
+      const duration = Date.now() - startTime;
+      this.logger.info('Busca concluída', {
+        productName: searchData.productName,
+        duration,
+        resultCount: result.items.length,
+      });
+      
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.error('Busca falhou', {
+        productName: searchData.productName,
+        duration,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+}
+```
+
+## 🚫 O que NÃO fazer
+
+- ❌ Não usar `any` type
+- ❌ Não fazer console.log (usar logger estruturado)
+- ❌ Não deixar métodos públicos sem necessidade
+- ❌ Não misturar lógica de negócio com controllers
+- ❌ Não usar singletons desnecessários
+- ❌ Não fazer operações síncronas bloqueantes
+- ❌ Não esquecer de tratar erros
+- ❌ Não usar variáveis globais
+- ❌ **NUNCA desabilitar funcionalidades essenciais (banco, validações, etc.)**
+
+## ✅ O que SEMPRE fazer
+
+- ✅ Usar TypeScript strict mode
+- ✅ Implementar interfaces para dependências
+- ✅ Usar decorators do NestJS apropriadamente
+- ✅ Validar entrada de dados
+- ✅ Tratar erros adequadamente
+- ✅ Usar logs estruturados
+- ✅ Seguir princípios SOLID
+- ✅ Implementar Clean Architecture
+- ✅ Usar injeção de dependência
+- ✅ Documentar APIs com Swagger
+- ✅ Criar arquivo .http para cada API (testes via REST Client)
+- ✅ **SEMPRE corrigir problemas de configuração ao invés de desabilitar funcionalidades**
+
+## 🔄 Fluxo de Desenvolvimento
+
+1. **Definir Use Case** - O que a funcionalidade deve fazer
+2. **Criar Interface** - Como a funcionalidade se comunica
+3. **Implementar** - Código seguindo os padrões
+4. **Validar** - Verificar se segue as regras
+5. **Testar** - Funcionalidade funciona corretamente
+6. **Documentar** - API e código bem documentados
+
+---
+
+**Lembre-se**: Este arquivo define os padrões do projeto. Sempre consulte antes de implementar novas funcionalidades para garantir consistência e qualidade do código. **NUNCA desabilite funcionalidades essenciais - sempre corrija os problemas de configuração!**

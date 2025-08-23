@@ -1,0 +1,81 @@
+### Criar nova busca de produto
+POST http://localhost:3001/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "PS5",
+  "maxResults": 50
+}
+
+### Criar busca com categoria
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "Xbox Series X",
+  "maxResults": 30,
+  "category": "Games e Consoles"
+}
+
+### Criar busca com faixa de preço
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "Nintendo Switch",
+  "maxResults": 25,
+  "priceRange": {
+    "min": 1000,
+    "max": 3000
+  }
+}
+
+### Criar busca com todos os parâmetros
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "Smartphone Samsung",
+  "maxResults": 100,
+  "category": "Eletrônicos",
+  "priceRange": {
+    "min": 500,
+    "max": 5000
+  }
+}
+
+### Teste de validação - Nome vazio
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "",
+  "maxResults": 50
+}
+
+### Teste de validação - MaxResults inválido
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "PS5",
+  "maxResults": 150
+}
+
+### Teste de validação - Faixa de preço inválida
+POST http://localhost:3000/api/search-product
+Content-Type: application/json
+
+{
+  "productName": "PS5",
+  "priceRange": {
+    "min": 5000,
+    "max": 1000
+  }
+}
+
+### Consultar status da busca (substitua pelo ID real)
+GET http://localhost:3001/api/search-product/03140561-dfde-4997-81b6-9f5ccc2ad85b
+
+### Consultar busca específica (substitua pelo ID real)
+GET http://localhost:3001/api/search-product/03140561-dfde-4997-81b6-9f5ccc2ad85b

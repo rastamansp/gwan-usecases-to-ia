@@ -1,0 +1,161 @@
+version: '3.8'
+
+services:
+  # Aplicação NestJS
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: product-search-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:pazdedeus@postgres:5432/gwan_transcribe?sslmode=disable
+      - RABBITMQ_URL=amqp://root:pazdeDeus2025@rabbitmq:5672
+      - RABBITMQ_QUEUE_SEARCH_PRODUCT=search-product
+      - PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
+      - PLAYWRIGHT_HEADLESS=true
+      - PLAYWRIGHT_TIMEOUT=30000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - product-search-network
+    restart: unless-stopped
+
+  # Banco de Dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: product-search-postgres
+    environment:
+      POSTGRES_DB: gwan_transcribe
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pazdedeus
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - product-search-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gwan_transcribe"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ com Management Plugin
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: product-search-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: pazdeDeus2025
+      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+    networks:
+      - product-search-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para cache (opcional)
+  redis:
+    image: redis:7-alpine
+    container_name: product-search-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - product-search-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx para proxy reverso (opcional)
+  nginx:
+    image: nginx:alpine
+    container_name: product-search-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - product-search-network
+    restart: unless-stopped
+
+  # Worker Playwright separado
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: product-search-worker
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:pazdedeus@postgres:5432/gwan_transcribe?sslmode=disable
+      - RABBITMQ_URL=amqp://root:pazdeDeus2025@rabbitmq:5672
+      - RABBITMQ_QUEUE_SEARCH_PRODUCT=search-product
+      - PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
+      - PLAYWRIGHT_HEADLESS=true
+      - PLAYWRIGHT_TIMEOUT=30000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+      - playwright_screenshots:/app/screenshots
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - product-search-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+volumes:
+  postgres_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  rabbitmq_logs:
+    driver: local
+  redis_data:
+    driver: local
+  playwright_screenshots:
+    driver: local
+
+networks:
+  product-search-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

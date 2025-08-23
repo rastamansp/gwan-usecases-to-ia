@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL para testes
+  test-postgres:
+    image: postgres:15-alpine
+    container_name: test-postgres
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"  # Porta diferente para não conflitar com dev
+    volumes:
+      - test-postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d test_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ para testes
+  test-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: test-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5673:5672"  # Porta diferente para não conflitar com dev
+      - "15673:15672"  # Management UI
+    volumes:
+      - test-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para cache de testes (opcional)
+  test-redis:
+    image: redis:7-alpine
+    container_name: test-redis
+    ports:
+      - "6380:6379"  # Porta diferente para não conflitar com dev
+    volumes:
+      - test-redis-data:/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Aplicação de teste
+  test-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: test-app
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@test-postgres:5432/test_db
+      RABBITMQ_URL: amqp://guest:guest@test-rabbitmq:5672/
+      REDIS_URL: redis://test-redis:6379
+      TEST_APP_PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+      test-rabbitmq:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    networks:
+      - test-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: ["pnpm", "run", "test:bdd"]
+
+volumes:
+  test-postgres-data:
+  test-rabbitmq-data:
+  test-redis-data:
+
+networks:
+  test-network:
+    driver: bridge

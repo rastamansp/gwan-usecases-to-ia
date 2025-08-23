@@ -1,0 +1,14 @@
+### Verificar saúde do worker
+GET http://localhost:3000/api/worker/health
+
+### Verificar status do worker
+GET http://localhost:3000/api/worker/status
+
+### Verificar estatísticas detalhadas do worker
+GET http://localhost:3000/api/worker/stats
+
+### Reiniciar navegador Playwright
+POST http://localhost:3000/api/worker/restart-browser
+
+### Executar busca de teste
+POST http://localhost:3000/api/worker/test-search/PS5
