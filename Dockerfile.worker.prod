@@ -1,4 +1,4 @@
-# Multi-stage build para produção - Worker Versão Estável
+# Multi-stage build para produção - Worker Versão Alternativa
 FROM node:20-alpine AS builder
 
 # Instalar pnpm globalmente
@@ -22,16 +22,16 @@ RUN pnpm run build
 # Stage de produção
 FROM node:20-alpine AS production
 
-# Instalar dependências do sistema usando uma abordagem mais estável
-RUN apk add --no-cache --update \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    && rm -rf /var/cache/apk/*
+# Instalar apenas dependências essenciais uma por vez
+RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache nss
+RUN apk add --no-cache freetype
+RUN apk add --no-cache harfbuzz
+
+# Tentar instalar chromium de forma mais específica
+RUN apk add --no-cache chromium || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.18/main chromium || \
+    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.17/main chromium
 
 # Definir variáveis de ambiente para o Playwright
 ENV PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
