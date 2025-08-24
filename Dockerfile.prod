@@ -1,8 +1,10 @@
-# Multi-stage build para produção - Versão com imagem base estável
+# Multi-stage build para produção - Versão Robusta com pnpm
 FROM node:20-alpine AS builder
 
-# Instalar pnpm globalmente
-RUN npm install -g pnpm
+# Instalar pnpm globalmente com retry e fallback
+RUN npm install -g pnpm || \
+    (npm cache clean --force && npm install -g pnpm) || \
+    (npm config set registry https://registry.npmjs.org/ && npm install -g pnpm)
 
 # Criar diretório da aplicação
 WORKDIR /app
