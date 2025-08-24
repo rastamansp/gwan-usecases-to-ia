@@ -9,4 +9,28 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('health')
+  getHealth(): object {
+    return {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      service: 'Product Search API',
+      environment: process.env.NODE_ENV || 'development'
+    };
+  }
+
+  @Get('test')
+  getTest(): object {
+    return {
+      message: 'API funcionando! 🚀',
+      timestamp: new Date().toISOString(),
+      routes: {
+        health: '/health',
+        test: '/test',
+        api: '/api',
+        docs: '/api/docs'
+      }
+    };
+  }
 }
