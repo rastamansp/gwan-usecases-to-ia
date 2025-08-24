@@ -92,8 +92,8 @@ services:
       - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,PATCH,OPTIONS"
       - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowOriginList=https://admin.gwan.com.br,https://www.admin.gwan.com.br,https://mart.gwan.com.br,https://www.mart.gwan.com.br"
       - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowHeaders=Content-Type,Authorization"
-      - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowCredentials=true"
-      - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlMaxAge=100"
+      - "traefik.http.middlewares.product-search-worker-headers.headers.accessControlAllowCredentials=true"
+      - "traefik.http.middlewares.product-search-worker-headers.headers.accessControlMaxAge=100"
       # Apply both middlewares
       - "traefik.http.routers.product-search-worker.middlewares=product-search-worker-headers,product-search-worker-cors"
     volumes:
