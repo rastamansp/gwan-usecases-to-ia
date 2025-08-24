@@ -1,25 +1,20 @@
-# Multi-stage build para produção - Versão Robusta com pnpm
+# Multi-stage build para produção - Versão com npm nativo
 FROM node:20-alpine AS builder
-
-# Instalar pnpm globalmente com retry e fallback
-RUN npm install -g pnpm || \
-    (npm cache clean --force && npm install -g pnpm) || \
-    (npm config set registry https://registry.npmjs.org/ && npm install -g pnpm)
 
 # Criar diretório da aplicação
 WORKDIR /app
 
 # Copiar arquivos de dependências
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 
-# Instalar dependências
-RUN pnpm install --frozen-lockfile
+# Instalar dependências usando npm nativo
+RUN npm install
 
 # Copiar código fonte
 COPY . .
 
 # Build da aplicação
-RUN pnpm run build
+RUN npm run build
 
 # Stage de produção - usar imagem que já tem Chromium
 FROM mcr.microsoft.com/playwright:v1.40.0-focal AS production
