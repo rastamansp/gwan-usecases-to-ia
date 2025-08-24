@@ -1,4 +1,4 @@
-# Multi-stage build para produção - Worker Versão Alternativa
+# Multi-stage build para produção - Worker com imagem base estável
 FROM node:20-alpine AS builder
 
 # Instalar pnpm globalmente
@@ -19,39 +19,26 @@ COPY . .
 # Build da aplicação
 RUN pnpm run build
 
-# Stage de produção
-FROM node:20-alpine AS production
+# Stage de produção - usar imagem que já tem Chromium
+FROM mcr.microsoft.com/playwright:v1.40.0-focal AS production
 
-# Instalar apenas dependências essenciais uma por vez
-RUN apk add --no-cache ca-certificates
-RUN apk add --no-cache nss
-RUN apk add --no-cache freetype
-RUN apk add --no-cache harfbuzz
-
-# Tentar instalar chromium de forma mais específica
-RUN apk add --no-cache chromium || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.18/main chromium || \
-    apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.17/main chromium
-
-# Definir variáveis de ambiente para o Playwright
-ENV PLAYWRIGHT_BROWSER_PATH=/usr/bin/chromium
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+# Definir variáveis de ambiente
 ENV NODE_ENV=production
+ENV PORT=3000
 
 # Criar usuário não-root
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
+RUN groupadd -r nestjs && useradd -r -g nestjs nestjs
 
 # Criar diretório da aplicação
 WORKDIR /app
 
 # Copiar código compilado do stage anterior
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nestjs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nestjs /app/node_modules ./node_modules
 
 # Criar diretório para logs
 RUN mkdir -p logs/screenshots && \
-    chown -R nestjs:nodejs logs
+    chown -R nestjs:nestjs logs
 
 # Mudar para usuário não-root
 USER nestjs
