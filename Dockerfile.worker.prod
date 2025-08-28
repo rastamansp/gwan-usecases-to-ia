@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Stage de produção - usar imagem que já tem Chromium
-FROM mcr.microsoft.com/playwright:v1.40.0-focal AS production
+FROM mcr.microsoft.com/playwright:v1.55.0-focal AS production
 
 # Definir variáveis de ambiente
 ENV NODE_ENV=production
