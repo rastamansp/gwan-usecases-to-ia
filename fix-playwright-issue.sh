@@ -22,7 +22,7 @@ docker rmi $(docker images -q product-search-worker-prod) 2>/dev/null || true
 
 # 4. Atualizar imagem base do Playwright
 echo "⬇️ Atualizando imagem base do Playwright..."
-docker pull mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-focal
+docker pull mcr.microsoft.com/playwright:v1.55.0
 
 # 5. Rebuild da imagem do worker
 echo "🔨 Rebuild da imagem do worker..."

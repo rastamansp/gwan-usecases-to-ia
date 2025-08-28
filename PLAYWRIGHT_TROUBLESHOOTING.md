@@ -4,12 +4,12 @@
 
 **Erro:** `Executable doesn't exist at /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell`
 
-**Causa:** Incompatibilidade entre a versão do Playwright no código (1.55.0) e a imagem Docker (1.40.0-focal).
+**Causa:** Incompatibilidade entre a versão do Playwright no código (1.55.0) e a imagem Docker (1.40.0).
 
 ## ✅ **Solução Implementada**
 
 ### 1. **Dockerfile Atualizado**
-- ✅ `Dockerfile.worker.prod` atualizado para usar `mcr.microsoft.com/playwright:v1.55.0-focal`
+- ✅ `Dockerfile.worker.prod` atualizado para usar `mcr.microsoft.com/playwright:v1.55.0`
 - ✅ Compatibilidade garantida entre código e imagem Docker
 
 ### 2. **Script de Deploy Atualizado**
@@ -44,7 +44,7 @@ docker-compose -f docker-compose.prod.yml down
 docker rmi $(docker images -q product-search-worker-prod)
 
 # 3. Atualizar imagem base
-docker pull mcr.microsoft.com/playwright:v1.55.0-focal
+docker pull mcr.microsoft.com/playwright:v1.55.0
 
 # 4. Rebuild
 docker-compose -f docker-compose.prod.yml build --no-cache worker
@@ -76,7 +76,7 @@ docker logs product-search-worker-prod --tail 20
 
 ## 📋 **Checklist de Verificação**
 
-- [ ] Imagem Docker usa versão 1.55.0-focal
+- [ ] Imagem Docker usa versão 1.55.0
 - [ ] Playwright inicializa sem erros
 - [ ] Worker responde ao health check
 - [ ] Busca de teste funciona

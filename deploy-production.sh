@@ -22,7 +22,7 @@ docker system prune -f
 
 # 4. Fazer pull das imagens base mais recentes
 echo "⬇️ Atualizando imagens base..."
-docker pull mcr.microsoft.com/playwright:v1.55.0-focal
+docker pull mcr.microsoft.com/playwright:v1.55.0
 docker pull node:20-alpine
 
 # 5. Rebuild das imagens
