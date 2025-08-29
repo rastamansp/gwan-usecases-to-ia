@@ -26,17 +26,17 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>('WORKER_PORT', 3000);
 
   await app.listen(port);
-  
+
   console.log(`🚀 Worker iniciado na porta ${port}`);
   console.log(`📊 Ambiente: ${configService.get<string>('NODE_ENV', 'development')}`);
   console.log(`⚙️ Worker disponível em: http://localhost:${port}/api/worker`);
   console.log(`📚 Documentação Swagger: http://localhost:${port}/api/docs`);
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch(error => {
   console.error('❌ Erro ao iniciar worker:', error);
   process.exit(1);
 });

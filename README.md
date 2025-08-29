@@ -6,6 +6,7 @@ Sistema automatizado de busca de produtos no Mercado Livre utilizando **Playwrig
 
 - [Visão Geral](#visão-geral)
 - [Status do Projeto](#status-do-projeto)
+- [Changelog](#changelog)
 - [Arquitetura](#arquitetura)
 - [Funcionalidades](#funcionalidades)
 - [Pré-requisitos](#pré-requisitos)
@@ -52,6 +53,7 @@ Este projeto implementa um sistema que permite aos usuários solicitar buscas de
 - **Correção de Preços Brasileiros**: Formato R$ 9.500 → 9500.00 ✅
 - **Organização de Screenshots**: Pasta logs/screenshots/ estruturada ✅
 - **Configuração .gitignore**: Screenshots e arquivos de debug ignorados ✅
+- **Correção do maxResults**: Parâmetro agora é SEMPRE respeitado ✅
 
 ### 🚧 **EM DESENVOLVIMENTO**
 - **Endpoints Adicionais**: Status de busca e resultados ✅
@@ -102,6 +104,37 @@ pnpm run test:bdd -- --tags "@search-product"
 pnpm run test:bdd -- --tags "@worker"
 pnpm run test:bdd -- --tags "@basic-search"
 ```
+
+---
+
+## 📝 Changelog
+
+### [v1.1.0] - 2025-08-30
+
+#### ✅ **Correções**
+- **maxResults agora é SEMPRE respeitado**: Corrigido bug onde o sistema sempre retornava 50 resultados independente do valor solicitado
+- **Persistência correta no banco**: O parâmetro maxResults agora é salvo corretamente na entidade ProductSearch
+- **Validação consistente**: O sistema valida e respeita o maxResults em todas as camadas (API, Worker, Banco)
+
+#### 🔧 **Mudanças Técnicas**
+- **ExecuteProductSearchUseCase**: Método `saveResult` agora recebe o comando completo para persistir todos os parâmetros
+- **ProductSearch Entity**: Todos os campos (maxResults, category, priceRange) são salvos corretamente
+- **Worker Playwright**: Continua respeitando o maxResults conforme já implementado
+
+#### 📊 **Impacto**
+- **Antes**: Busca com `maxResults: 3` retornava 50 produtos
+- **Depois**: Busca com `maxResults: 3` retorna exatamente 3 produtos
+- **Compatibilidade**: Totalmente compatível com versões anteriores
+- **Performance**: Melhorada para buscas com maxResults baixo
+
+#### 🧪 **Testado**
+- ✅ Busca com maxResults: 3 → Retorna 3 produtos
+- ✅ Busca com maxResults: 50 → Retorna até 50 produtos  
+- ✅ Busca sem maxResults → Retorna até 50 produtos (padrão)
+- ✅ Persistência no banco com valores corretos
+- ✅ Worker processa conforme maxResults solicitado
+
+---
 
 **Status Geral**: **90% Concluído** - MVP funcional com API operacional e testes BDD completos
 

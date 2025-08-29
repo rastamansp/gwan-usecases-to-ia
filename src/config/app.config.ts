@@ -38,11 +38,25 @@ export class AppConfig {
   }
 
   get playwrightBrowserPath(): string {
-    return this.configService.get<string>('PLAYWRIGHT_BROWSER_PATH', '/usr/bin/chromium');
+    // Detectar sistema operacional e usar caminho apropriado
+    if (process.platform === 'win32') {
+      // Windows: usar Playwright nativo (sem caminho específico)
+      return '';
+    } else if (process.platform === 'linux') {
+      // Linux: usar caminho padrão do Docker
+      return this.configService.get<string>('PLAYWRIGHT_BROWSER_PATH', '/usr/bin/chromium');
+    } else if (process.platform === 'darwin') {
+      // macOS: usar Playwright nativo
+      return '';
+    } else {
+      // Outros sistemas: usar Playwright nativo
+      return '';
+    }
   }
 
   get playwrightHeadless(): boolean {
-    return this.configService.get<boolean>('PLAYWRIGHT_HEADLESS', true);
+    const value = this.configService.get<string>('PLAYWRIGHT_HEADLESS', 'true');
+    return value === 'true';
   }
 
   get playwrightTimeout(): number {

@@ -4,19 +4,19 @@ import { Transform, Type } from 'class-transformer';
 export class ProductResultDto {
   @ApiProperty({
     description: 'ID único do resultado',
-    example: 'b376282a-59c3-415c-88e6-37bac7331e3b'
+    example: 'b376282a-59c3-415c-88e6-37bac7331e3b',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Título do produto',
-    example: 'Apple iPad Pro 13" Chip M4 Com Wifi + 5g Nano-texture 1tb'
+    example: 'Apple iPad Pro 13" Chip M4 Com Wifi + 5g Nano-texture 1tb',
   })
   title!: string;
 
   @ApiPropertyOptional({
     description: 'Preço atual do produto em reais',
-    example: 19477.00
+    example: 19477.0,
   })
   @Type(() => Number)
   @Transform(({ value }) => {
@@ -28,7 +28,7 @@ export class ProductResultDto {
 
   @ApiPropertyOptional({
     description: 'Preço original do produto em reais',
-    example: 22099.00
+    example: 22099.0,
   })
   @Type(() => Number)
   @Transform(({ value }) => {
@@ -40,7 +40,7 @@ export class ProductResultDto {
 
   @ApiPropertyOptional({
     description: 'Percentual de desconto',
-    example: 11.86
+    example: 11.86,
   })
   @Type(() => Number)
   @Transform(({ value }) => {
@@ -52,13 +52,13 @@ export class ProductResultDto {
 
   @ApiPropertyOptional({
     description: 'Nome do vendedor',
-    example: 'Loja Oficial'
+    example: 'Loja Oficial',
   })
   sellerName?: string;
 
   @ApiPropertyOptional({
     description: 'Avaliação do vendedor (0-5)',
-    example: 4.8
+    example: 4.8,
   })
   @Type(() => Number)
   @Transform(({ value }) => {
@@ -70,29 +70,29 @@ export class ProductResultDto {
 
   @ApiProperty({
     description: 'Frete grátis disponível',
-    example: true
+    example: true,
   })
   freeShipping!: boolean;
 
   @ApiPropertyOptional({
     description: 'Condição do produto',
-    example: 'Novo'
+    example: 'Novo',
   })
   condition?: string;
 
   @ApiPropertyOptional({
-    description: 'URL da imagem do produto'
+    description: 'URL da imagem do produto',
   })
   imageUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'URL do produto no Mercado Livre'
+    description: 'URL do produto no Mercado Livre',
   })
   productUrl?: string;
 
   @ApiProperty({
     description: 'Data de criação do resultado',
-    example: '2025-08-23T01:03:12.500Z'
+    example: '2025-08-23T01:03:12.500Z',
   })
   createdAt!: Date;
 
@@ -101,7 +101,7 @@ export class ProductResultDto {
     if (!this.price) return 'Preço não disponível';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(this.price);
   }
 
@@ -109,7 +109,7 @@ export class ProductResultDto {
     if (!this.originalPrice) return 'Preço original não disponível';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(this.originalPrice);
   }
 
@@ -122,19 +122,19 @@ export class ProductResultDto {
 export class SearchInfoDto {
   @ApiProperty({
     description: 'Data de criação da busca',
-    example: '2025-08-23T01:02:42.861Z'
+    example: '2025-08-23T01:02:42.861Z',
   })
   createdAt!: Date;
 
   @ApiPropertyOptional({
     description: 'Data de conclusão da busca',
-    example: '2025-08-23T01:03:12.677Z'
+    example: '2025-08-23T01:03:12.677Z',
   })
   completedAt?: Date;
 
   @ApiProperty({
     description: 'Número máximo de resultados solicitados',
-    example: 50
+    example: 50,
   })
   maxResults!: number;
 }
@@ -142,37 +142,37 @@ export class SearchInfoDto {
 export class SearchResultsDataDto {
   @ApiProperty({
     description: 'ID único da busca',
-    example: 'c4532f29-104d-4328-9669-de038d1b7988'
+    example: 'c4532f29-104d-4328-9669-de038d1b7988',
   })
   searchId!: string;
 
   @ApiProperty({
     description: 'Nome do produto buscado',
-    example: 'IPAD pro M4 516gb'
+    example: 'IPAD pro M4 516gb',
   })
   productName!: string;
 
   @ApiProperty({
     description: 'Status atual da busca',
-    example: 'completed'
+    example: 'completed',
   })
   status!: string;
 
   @ApiProperty({
     description: 'Total de resultados encontrados',
-    example: 1
+    example: 1,
   })
   totalResults!: number;
 
   @ApiProperty({
     description: 'Lista de produtos encontrados',
-    type: [ProductResultDto]
+    type: [ProductResultDto],
   })
   results!: ProductResultDto[];
 
   @ApiProperty({
     description: 'Informações da busca',
-    type: SearchInfoDto
+    type: SearchInfoDto,
   })
   searchInfo!: SearchInfoDto;
 }
@@ -180,19 +180,19 @@ export class SearchResultsDataDto {
 export class SearchResultsResponseDto {
   @ApiProperty({
     description: 'Código de status da resposta',
-    example: 200
+    example: 200,
   })
   statusCode!: number;
 
   @ApiProperty({
     description: 'Mensagem de resposta',
-    example: 'Resultados da busca recuperados com sucesso'
+    example: 'Resultados da busca recuperados com sucesso',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Dados da resposta',
-    type: SearchResultsDataDto
+    type: SearchResultsDataDto,
   })
   data!: SearchResultsDataDto;
 
@@ -206,7 +206,7 @@ export class SearchResultsResponseDto {
     const response = new SearchResultsResponseDto();
     response.statusCode = 200;
     response.message = 'Resultados da busca recuperados com sucesso';
-    
+
     const data = new SearchResultsDataDto();
     data.searchId = searchId;
     data.productName = productName;
@@ -214,7 +214,7 @@ export class SearchResultsResponseDto {
     data.totalResults = results.length;
     data.results = results;
     data.searchInfo = searchInfo;
-    
+
     response.data = data;
     return response;
   }

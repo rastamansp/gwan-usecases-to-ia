@@ -18,10 +18,10 @@ export class ExecuteProductSearchUseCase {
   constructor(
     @Inject('IProductRepository')
     private readonly productRepository: IProductRepository,
-    
+
     @Inject('IQueueService')
     private readonly queueService: IQueueService,
-    
+
     @Inject('ILogger')
     private readonly logger: ILogger,
   ) {}
@@ -36,25 +36,25 @@ export class ExecuteProductSearchUseCase {
 
       // 1. Validação
       await this.validateCommand(command);
-      
+
       // 2. Execução da lógica de negócio
       const result = await this.processSearch(command);
-      
+
       // 3. Persistência
-      await this.saveResult(result);
-      
+      await this.saveResult(result, command);
+
       // 4. Notificação via fila
       await this.notifyCompletion(command);
-      
-      this.logger.info('Busca executada com sucesso', { 
+
+      this.logger.info('Busca executada com sucesso', {
         searchId: result.searchId,
         productName: result.productName,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Erro ao executar busca', { 
-        command, 
+      this.logger.error('Erro ao executar busca', {
+        command,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -96,18 +96,21 @@ export class ExecuteProductSearchUseCase {
     };
   }
 
-  private async saveResult(result: ExecuteSearchResult): Promise<void> {
+  private async saveResult(result: ExecuteSearchResult, command: ExecuteSearchCommand): Promise<void> {
     // Criar entidade para persistência
     const productSearch = new ProductSearch();
     productSearch.id = result.searchId;
     productSearch.productName = result.productName;
     productSearch.status = result.status;
-    productSearch.maxResults = 50; // Valor padrão
+    productSearch.maxResults = command.maxResults; // Usar o valor do comando
+    productSearch.category = command.category;
+    productSearch.priceMin = command.priceRange?.min;
+    productSearch.priceMax = command.priceRange?.max;
     productSearch.createdAt = result.createdAt;
 
     // Salvar no banco
     await this.productRepository.save(productSearch);
-    this.logger.info('Resultado salvo no banco', { result });
+    this.logger.info('Resultado salvo no banco', { result, maxResults: command.maxResults });
   }
 
   private async notifyCompletion(command: ExecuteSearchCommand): Promise<void> {
@@ -122,8 +125,8 @@ export class ExecuteProductSearchUseCase {
     };
 
     await this.queueService.sendMessage('search-product', message);
-    
-    this.logger.info('Mensagem enviada para fila', { 
+
+    this.logger.info('Mensagem enviada para fila', {
       searchId: command.searchId,
       queueName: 'search-product',
     });

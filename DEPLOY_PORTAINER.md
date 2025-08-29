@@ -14,10 +14,12 @@
 ## 🐳 Configuração Docker Compose
 
 ### 1. **Opção A: Deploy Direto (Recomendado para desenvolvimento)**
+
 - **Arquivo**: `docker-compose.prod.yml`
 - **Método**: Copiar código fonte para o servidor
 
 ### 2. **Opção B: Deploy com Git Clone (Recomendado para produção)**
+
 - **Arquivo**: `docker-compose.prod.git.yml`
 - **Método**: Clone automático do GitHub durante o build
 
@@ -26,6 +28,7 @@
 ### **Opção A: Deploy Direto (Sem Git)**
 
 #### Passo 1: Preparar Código Fonte
+
 1. **Clone o repositório no servidor:**
    ```bash
    git clone https://github.com/rastamansp/gwan-usecases-to-ia.git
@@ -33,6 +36,7 @@
    ```
 
 #### Passo 2: Criar Stack
+
 1. **Acesse o Portainer**
 2. **Vá para Stacks**
 3. **Clique em "Add stack"**
@@ -44,6 +48,7 @@
 ### **Opção B: Deploy com Git Clone (Recomendado)**
 
 #### Passo 1: Criar Stack
+
 1. **Acesse o Portainer**
 2. **Vá para Stacks**
 3. **Clique em "Add stack"**
@@ -53,6 +58,7 @@
    - **Copy o conteúdo do `portainer-stack-git.yml`**
 
 #### Passo 2: Configurar Rede
+
 1. **Verifique se a rede `gwan` existe**
 2. **Se não existir, crie:**
    ```bash
@@ -60,6 +66,7 @@
    ```
 
 #### Passo 3: Deploy
+
 1. **Clique em "Deploy the stack"**
 2. **Aguarde a construção das imagens** (inclui clone do Git)
 3. **Verifique os logs de build**
@@ -69,27 +76,29 @@
 ### Labels Configurados
 
 #### Aplicação Principal (`/api/*`)
+
 ```yaml
 labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/api`)"
-  - "traefik.http.routers.product-search-app.entrypoints=websecure"
-  - "traefik.http.routers.product-search-app.tls.certresolver=letsencrypt"
-  - "traefik.http.services.product-search-app.loadbalancer.server.port=3000"
-  - "traefik.http.middlewares.product-search-app-stripprefix.stripprefix.prefixes=/api"
-  - "traefik.http.routers.product-search-app.middlewares=product-search-app-stripprefix"
+  - 'traefik.enable=true'
+  - 'traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/api`)'
+  - 'traefik.http.routers.product-search-app.entrypoints=websecure'
+  - 'traefik.http.routers.product-search-app.tls.certresolver=letsencrypt'
+  - 'traefik.http.services.product-search-app.loadbalancer.server.port=3000'
+  - 'traefik.http.middlewares.product-search-app-stripprefix.stripprefix.prefixes=/api'
+  - 'traefik.http.routers.product-search-app.middlewares=product-search-app-stripprefix'
 ```
 
 #### Worker (`/worker/*`)
+
 ```yaml
 labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)"
-  - "traefik.http.routers.product-search-worker.entrypoints=websecure"
-  - "traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt"
-  - "traefik.http.services.product-search-worker.loadbalancer.server.port=3000"
-  - "traefik.http.middlewares.product-search-worker-stripprefix.stripprefix.prefixes=/worker"
-  - "traefik.http.routers.product-search-worker.middlewares=product-search-worker-stripprefix"
+  - 'traefik.enable=true'
+  - 'traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)'
+  - 'traefik.http.routers.product-search-worker.entrypoints=websecure'
+  - 'traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt'
+  - 'traefik.http.services.product-search-worker.loadbalancer.server.port=3000'
+  - 'traefik.http.middlewares.product-search-worker-stripprefix.stripprefix.prefixes=/worker'
+  - 'traefik.http.routers.product-search-worker.middlewares=product-search-worker-stripprefix'
 ```
 
 ## 📊 Monitoramento e Logs
@@ -149,6 +158,7 @@ curl -k https://mart.gwan.com.br/worker/api/worker/status
 ### Problemas Comuns
 
 #### 1. Erro de Rede
+
 ```bash
 # Verificar se a rede gwan existe
 docker network ls | grep gwan
@@ -158,6 +168,7 @@ docker exec product-search-app-prod ping postgres.gwan.com.br
 ```
 
 #### 2. Erro de Git Clone
+
 ```bash
 # Verificar logs de build
 docker-compose -f docker-compose.prod.git.yml logs
@@ -167,6 +178,7 @@ docker exec product-search-app-prod ping github.com
 ```
 
 #### 3. Erro de Traefik
+
 ```bash
 # Verificar logs do Traefik
 docker logs traefik
@@ -176,6 +188,7 @@ docker exec traefik traefik version
 ```
 
 #### 4. Erro de Build
+
 ```bash
 # Verificar logs de build
 docker-compose -f docker-compose.prod.git.yml logs
@@ -238,6 +251,7 @@ docker volume rm product-search-automation_git-cache
 ## 🚀 **Recomendação para Produção**
 
 **Use a Opção B (Git Clone)** porque:
+
 - ✅ **Atualizações automáticas** via Git
 - ✅ **Versionamento** controlado
 - ✅ **Deploy consistente** em todos os ambientes

@@ -5,19 +5,17 @@ import { WorkerService } from './worker.service';
 @ApiTags('worker')
 @Controller('worker')
 export class WorkerController {
-  constructor(
-    private readonly workerService: WorkerService,
-  ) {}
+  constructor(private readonly workerService: WorkerService) {}
 
   @Get('health')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Verificar saúde do worker',
-    description: 'Retorna o status de saúde do worker e seus componentes'
+    description: 'Retorna o status de saúde do worker e seus componentes',
   })
   @ApiResponse({
     status: 200,
-    description: 'Status de saúde do worker'
+    description: 'Status de saúde do worker',
   })
   public async getHealth(): Promise<any> {
     return await this.workerService.healthCheck();
@@ -27,11 +25,11 @@ export class WorkerController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter status do worker',
-    description: 'Retorna o status atual do worker e informações de operação'
+    description: 'Retorna o status atual do worker e informações de operação',
   })
   @ApiResponse({
     status: 200,
-    description: 'Status atual do worker'
+    description: 'Status atual do worker',
   })
   public getStatus(): any {
     return this.workerService.getStatus();
@@ -41,11 +39,11 @@ export class WorkerController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter estatísticas detalhadas',
-    description: 'Retorna estatísticas de performance e métricas do worker'
+    description: 'Retorna estatísticas de performance e métricas do worker',
   })
   @ApiResponse({
     status: 200,
-    description: 'Estatísticas do worker'
+    description: 'Estatísticas do worker',
   })
   public getStats(): any {
     return this.workerService.getDetailedStats();
@@ -55,15 +53,15 @@ export class WorkerController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Reiniciar navegador Playwright',
-    description: 'Reinicia o navegador Playwright para resolver problemas de estabilidade'
+    description: 'Reinicia o navegador Playwright para resolver problemas de estabilidade',
   })
   @ApiResponse({
     status: 200,
-    description: 'Navegador reiniciado com sucesso'
+    description: 'Navegador reiniciado com sucesso',
   })
   @ApiResponse({
     status: 500,
-    description: 'Erro ao reiniciar navegador'
+    description: 'Erro ao reiniciar navegador',
   })
   public async restartBrowser(): Promise<any> {
     try {
@@ -87,20 +85,20 @@ export class WorkerController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Executar busca de teste',
-    description: 'Executa uma busca de teste para validar o funcionamento do worker'
+    description: 'Executa uma busca de teste para validar o funcionamento do worker',
   })
   @ApiParam({
     name: 'productName',
     description: 'Nome do produto para teste',
-    example: 'PS5'
+    example: 'PS5',
   })
   @ApiResponse({
     status: 200,
-    description: 'Busca de teste executada com sucesso'
+    description: 'Busca de teste executada com sucesso',
   })
   @ApiResponse({
     status: 500,
-    description: 'Erro na execução da busca de teste'
+    description: 'Erro na execução da busca de teste',
   })
   public async executeTestSearch(
     @Param('productName') productName: string,
@@ -133,15 +131,16 @@ export class WorkerController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Testar navegação básica do Playwright',
-    description: 'Testa se o Playwright consegue navegar para o Mercado Livre e encontrar elementos básicos'
+    description:
+      'Testa se o Playwright consegue navegar para o Mercado Livre e encontrar elementos básicos',
   })
   @ApiResponse({
     status: 200,
-    description: 'Teste de navegação executado com sucesso'
+    description: 'Teste de navegação executado com sucesso',
   })
   @ApiResponse({
     status: 500,
-    description: 'Erro no teste de navegação'
+    description: 'Erro no teste de navegação',
   })
   public async testNavigation(): Promise<any> {
     try {
@@ -156,6 +155,63 @@ export class WorkerController {
       return {
         statusCode: 500,
         message: 'Erro no teste de navegação',
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  @Post('force-recovery')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Forçar recuperação do Playwright',
+    description: 'Força a recuperação manual do Playwright quando há problemas'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recuperação executada com sucesso'
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro na recuperação'
+  })
+  public async forceRecovery(): Promise<any> {
+    try {
+      const result = await this.workerService.forceRecovery();
+      return result;
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Erro ao forçar recuperação',
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  @Get('playwright-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obter status detalhado do Playwright',
+    description: 'Retorna informações detalhadas sobre o estado do Playwright'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Status do Playwright'
+  })
+  public getPlaywrightStatus(): any {
+    try {
+      const status = this.workerService.getPlaywrightStatus();
+      return {
+        statusCode: 200,
+        message: 'Status do Playwright obtido com sucesso',
+        data: status,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Erro ao obter status do Playwright',
         error: error instanceof Error ? error.message : 'Erro desconhecido',
         timestamp: new Date().toISOString(),
       };

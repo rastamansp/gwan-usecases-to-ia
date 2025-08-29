@@ -10,7 +10,7 @@ export class BDDTestUtils {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
     endpoint: string,
     data?: any,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): Promise<AxiosResponse> {
     if (!world.app) {
       throw new Error('Aplicação não inicializada');
@@ -19,10 +19,10 @@ export class BDDTestUtils {
     // Usar a aplicação em teste ao invés de fazer requisições HTTP externas
     // Isso resolve problemas de configuração e contexto
     const request = require('supertest');
-    
+
     try {
       let testRequest = request(world.app.getHttpServer())[method.toLowerCase()](endpoint);
-      
+
       // Configurar headers
       testRequest = testRequest.set('Content-Type', 'application/json');
       if (headers) {
@@ -30,21 +30,21 @@ export class BDDTestUtils {
           testRequest = testRequest.set(key, headers[key]);
         });
       }
-      
+
       // Enviar dados se for POST/PUT/PATCH
       if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
         testRequest = testRequest.send(data);
       } else if (data && method === 'GET') {
         testRequest = testRequest.query(data);
       }
-      
+
       const response = await testRequest;
-      
+
       // Converter para formato esperado
       const mockResponse = {
         status: response.status,
         body: response.body,
-        headers: response.headers
+        headers: response.headers,
       };
 
       return mockResponse as any;
@@ -54,7 +54,7 @@ export class BDDTestUtils {
         const mockResponse = {
           status: error.status,
           body: error.response?.body || error.body,
-          headers: error.response?.headers || {}
+          headers: error.response?.headers || {},
         };
         return mockResponse as any;
       }
@@ -68,7 +68,7 @@ export class BDDTestUtils {
   static validateResponseStatus(response: any, expectedStatus: number): void {
     if (response.status !== expectedStatus) {
       throw new Error(
-        `Status esperado: ${expectedStatus}, recebido: ${response.status}. Resposta: ${JSON.stringify(response.body)}`
+        `Status esperado: ${expectedStatus}, recebido: ${response.status}. Resposta: ${JSON.stringify(response.body)}`,
       );
     }
   }
@@ -78,7 +78,7 @@ export class BDDTestUtils {
    */
   static validateResponseProperties(response: any, requiredProperties: string[]): void {
     const body = response.body;
-    
+
     requiredProperties.forEach(prop => {
       if (!body.hasOwnProperty(prop)) {
         throw new Error(`Propriedade obrigatória '${prop}' não encontrada na resposta`);
@@ -93,20 +93,20 @@ export class BDDTestUtils {
     const testData: Record<string, any> = {
       basic: {
         productName: 'PS5',
-        maxResults: 50
+        maxResults: 50,
       },
       withCategory: {
         productName: 'Xbox Series X',
         maxResults: 30,
-        category: 'Games e Consoles'
+        category: 'Games e Consoles',
       },
       withPriceRange: {
         productName: 'Nintendo Switch',
         maxResults: 25,
         priceRange: {
           min: 1000,
-          max: 3000
-        }
+          max: 3000,
+        },
       },
       complete: {
         productName: 'Smartphone Samsung',
@@ -114,17 +114,17 @@ export class BDDTestUtils {
         category: 'Eletrônicos',
         priceRange: {
           min: 500,
-          max: 5000
-        }
+          max: 5000,
+        },
       },
       invalid: {
         productName: '',
         maxResults: 150,
         priceRange: {
           min: 5000,
-          max: 1000
-        }
-      }
+          max: 1000,
+        },
+      },
     };
 
     return testData[scenario] || testData.basic;

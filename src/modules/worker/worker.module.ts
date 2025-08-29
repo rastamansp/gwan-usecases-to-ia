@@ -7,17 +7,17 @@ import { WorkerController } from './worker.controller';
 import { ProductSearch } from '../../shared/domain/entities/product-search.entity';
 import { SearchResult } from '../../shared/domain/entities/search-result.entity';
 import { RabbitMQConfigService } from '../../config/rabbitmq.config';
+import { AppConfig } from '../../config/app.config';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ProductSearch, SearchResult]),
-  ],
+  imports: [TypeOrmModule.forFeature([ProductSearch, SearchResult])],
   controllers: [WorkerController],
   providers: [
     WorkerService,
     PlaywrightService,
     QueueConsumerService,
     RabbitMQConfigService,
+    AppConfig,
     {
       provide: 'RabbitMQConfigService',
       useClass: RabbitMQConfigService,

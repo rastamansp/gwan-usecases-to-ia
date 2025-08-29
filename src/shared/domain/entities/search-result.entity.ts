@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ProductSearch } from './product-search.entity';
 
 @Entity('search_results')
@@ -45,7 +52,7 @@ export class SearchResult {
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @ManyToOne(() => ProductSearch, (search) => search.results)
+  @ManyToOne(() => ProductSearch, search => search.results)
   @JoinColumn({ name: 'search_id' })
   search!: ProductSearch;
 

@@ -18,7 +18,7 @@ export class PriceRangeDto {
   @ApiPropertyOptional({
     description: 'Preço mínimo do produto',
     example: 1000,
-    minimum: 0
+    minimum: 0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'Preço mínimo deve ser um número' })
@@ -28,7 +28,7 @@ export class PriceRangeDto {
   @ApiPropertyOptional({
     description: 'Preço máximo do produto',
     example: 5000,
-    minimum: 0
+    minimum: 0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'Preço máximo deve ser um número' })
@@ -64,7 +64,7 @@ export class CreateSearchDto {
   @ApiProperty({
     description: 'Nome do produto a ser buscado',
     example: 'PS5',
-    maxLength: 255
+    maxLength: 255,
   })
   @IsString({ message: 'Nome do produto deve ser uma string' })
   @IsNotEmpty({ message: 'Nome do produto é obrigatório' })
@@ -82,7 +82,7 @@ export class CreateSearchDto {
     example: 50,
     minimum: 1,
     maximum: 100,
-    default: 50
+    default: 50,
   })
   @IsOptional()
   @IsNumber({}, { message: 'MaxResults deve ser um número' })
@@ -101,7 +101,7 @@ export class CreateSearchDto {
   @ApiPropertyOptional({
     description: 'Categoria do produto',
     example: 'Gaming',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
@@ -110,12 +110,14 @@ export class CreateSearchDto {
 
   @ApiPropertyOptional({
     description: 'Faixa de preço para filtrar resultados',
-    type: PriceRangeDto
+    type: PriceRangeDto,
   })
   @IsOptional()
   @IsObject()
   @ValidateNested()
   @Type(() => PriceRangeDto)
-  @IsValidPriceRange({ message: 'Faixa de preço inválida: valor mínimo deve ser menor que o máximo' })
+  @IsValidPriceRange({
+    message: 'Faixa de preço inválida: valor mínimo deve ser menor que o máximo',
+  })
   priceRange?: PriceRangeDto;
 }

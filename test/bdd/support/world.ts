@@ -16,7 +16,7 @@ export class CustomWorld extends World {
     }).compile();
 
     this.app = this.moduleFixture.createNestApplication();
-    
+
     // Configurar pipes de validação como na aplicação principal
     const { ValidationPipe } = require('@nestjs/common');
     this.app.useGlobalPipes(
@@ -29,10 +29,10 @@ export class CustomWorld extends World {
         },
       }),
     );
-    
+
     // Configurar prefixo global da API como na aplicação principal
     this.app.setGlobalPrefix('api');
-    
+
     await this.app.init();
   }
 

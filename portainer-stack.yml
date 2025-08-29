@@ -20,13 +20,13 @@ services:
       - PLAYWRIGHT_HEADLESS=true
       - PLAYWRIGHT_TIMEOUT=30000
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.product-search-app.entrypoints=websecure"
-      - "traefik.http.routers.product-search-app.tls.certresolver=letsencrypt"
-      - "traefik.http.services.product-search-app.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.product-search-app-stripprefix.stripprefix.prefixes=/api"
-      - "traefik.http.routers.product-search-app.middlewares=product-search-app-stripprefix"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/api`)'
+      - 'traefik.http.routers.product-search-app.entrypoints=websecure'
+      - 'traefik.http.routers.product-search-app.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.product-search-app.loadbalancer.server.port=3000'
+      - 'traefik.http.middlewares.product-search-app-stripprefix.stripprefix.prefixes=/api'
+      - 'traefik.http.routers.product-search-app.middlewares=product-search-app-stripprefix'
     volumes:
       - ./logs:/app/logs
     deploy:
@@ -57,13 +57,13 @@ services:
       - PLAYWRIGHT_HEADLESS=true
       - PLAYWRIGHT_TIMEOUT=30000
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)"
-      - "traefik.http.routers.product-search-worker.entrypoints=websecure"
-      - "traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt"
-      - "traefik.http.services.product-search-worker.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.product-search-worker-stripprefix.stripprefix.prefixes=/worker"
-      - "traefik.http.routers.product-search-worker.middlewares=product-search-worker-stripprefix"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)'
+      - 'traefik.http.routers.product-search-worker.entrypoints=websecure'
+      - 'traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.product-search-worker.loadbalancer.server.port=3000'
+      - 'traefik.http.middlewares.product-search-worker-stripprefix.stripprefix.prefixes=/worker'
+      - 'traefik.http.routers.product-search-worker.middlewares=product-search-worker-stripprefix'
     volumes:
       - ./logs:/app/logs
     deploy:

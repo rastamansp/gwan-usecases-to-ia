@@ -7,7 +7,7 @@
 **Data de Criação**: 20/08/2025  
 **Responsável**: Pedro Almeida  
 **Prioridade**: Alta  
-**Status**: MVP Funcional com Testes BDD Completos  
+**Status**: MVP Funcional com Testes BDD Completos
 
 ## 🎯 Visão Geral
 
@@ -25,7 +25,7 @@ graph TB
     D --> E[Mercado Livre]
     E --> F[Resultados]
     F --> G[Banco de Dados]
-    
+
     style A fill:#e1f5fe
     style B fill:#c8e6c9
     style C fill:#fff3e0
@@ -50,7 +50,7 @@ sequenceDiagram
     API->>API: Validar parâmetros
     API->>RQ: Enviar para fila
     API->>U: Confirmação (202 Accepted)
-    
+
     RQ->>W: Consumir mensagem
     W->>ML: Executar busca Playwright
     ML->>W: Resultados da busca
@@ -96,11 +96,13 @@ sequenceDiagram
 ### 1. API de Busca de Produtos
 
 #### Endpoint
+
 ```
 POST /api/search-product
 ```
 
 #### Parâmetros de Entrada
+
 ```json
 {
   "productName": "string (obrigatório)",
@@ -114,6 +116,7 @@ POST /api/search-product
 ```
 
 #### Resposta de Sucesso
+
 ```json
 {
   "statusCode": 202,
@@ -128,19 +131,19 @@ POST /api/search-product
 ```
 
 #### Resposta de Erro
+
 ```json
 {
   "statusCode": 400,
   "message": "Parâmetros inválidos",
-  "errors": [
-    "productName é obrigatório"
-  ]
+  "errors": ["productName é obrigatório"]
 }
 ```
 
 ### 2. Sistema de Filas
 
 #### Configuração RabbitMQ
+
 - **URL**: Conforme variável `RABBITMQ_URL` do .env
 - **Fila**: `search-product` (conforme `RABBITMQ_QUEUE_SEARCH_PRODUCT`)
 - **Durabilidade**: Persistente
@@ -148,6 +151,7 @@ POST /api/search-product
 - **Prefetch**: 1 (processar uma mensagem por vez)
 
 #### Estrutura da Mensagem
+
 ```json
 {
   "searchId": "uuid",
@@ -163,6 +167,7 @@ POST /api/search-product
 ### 3. Worker Playwright
 
 #### Funcionalidades
+
 - **Navegador**: Chromium headless
 - **Timeout**: 30 segundos por operação
 - **Retry**: 3 tentativas em caso de falha
@@ -170,6 +175,7 @@ POST /api/search-product
 - **Logs**: Registro detalhado de cada etapa
 
 #### Fluxo de Execução
+
 ```mermaid
 flowchart TD
     A[Início do Script Playwright] --> B[Abrir navegador Chromium]
@@ -182,7 +188,7 @@ flowchart TD
     H --> I[Extrair lista de resultados]
     I --> J[Salvar no banco de dados]
     J --> K[Fim do Script]
-    
+
     style A fill:#e1f5fe
     style K fill:#c8e6c9
 ```
@@ -190,6 +196,7 @@ flowchart TD
 ## 🗄️ Modelo de Dados
 
 ### Tabela: ProductSearches
+
 ```sql
 CREATE TABLE product_searches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -208,6 +215,7 @@ CREATE TABLE product_searches (
 ```
 
 ### Tabela: SearchResults
+
 ```sql
 CREATE TABLE search_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -230,16 +238,19 @@ CREATE TABLE search_results (
 ## 🔒 Segurança e Validação
 
 ### Validação de Entrada
+
 - **productName**: String não vazia, máximo 255 caracteres
 - **maxResults**: Número entre 1 e 100
 - **priceRange**: Valores numéricos positivos, min < max
 
 ### Rate Limiting
+
 - **Máximo**: 10 requisições por minuto por IP
 - **Timeout**: 30 segundos por requisição
 - **Queue Limit**: Máximo 1000 mensagens na fila
 
 ### Autenticação (Futuro)
+
 - JWT tokens para usuários autenticados
 - API keys para integrações externas
 - Logs de auditoria para todas as operações
@@ -247,12 +258,14 @@ CREATE TABLE search_results (
 ## 📊 Monitoramento e Logs
 
 ### Métricas de Performance
+
 - **Tempo médio de processamento**: < 60 segundos
 - **Taxa de sucesso**: > 95%
 - **Tamanho da fila**: < 100 mensagens
 - **Uso de memória**: < 512MB por worker
 
 ### Logs Estruturados
+
 ```json
 {
   "timestamp": "2025-01-20T14:30:00Z",
@@ -272,16 +285,19 @@ CREATE TABLE search_results (
 ## 🧪 Testes
 
 ### Testes Unitários
+
 - Validação de parâmetros
 - Formatação de mensagens
 - Cálculos de preços e descontos
 
 ### Testes de Integração
+
 - Comunicação com RabbitMQ
 - Persistência no banco de dados
 - Validação de respostas da API
 
 ### Testes E2E
+
 - [x] Fluxo completo de busca (BDD implementado)
 - [x] Tratamento de erros (BDD implementado)
 - [x] Performance sob carga (BDD implementado)
@@ -290,6 +306,7 @@ CREATE TABLE search_results (
 ## 🚀 Roadmap de Implementação
 
 ### Fase 1: MVP (2 semanas)
+
 - [x] Estrutura básica do projeto NestJS
 - [x] Configuração do RabbitMQ
 - [x] API endpoint básico
@@ -298,6 +315,7 @@ CREATE TABLE search_results (
 - [x] Testes BDD com Cucumber (12/12 cenários)
 
 ### Fase 2: Melhorias (2 semanas)
+
 - [x] Validação robusta de parâmetros
 - [x] Sistema de retry e fallback
 - [x] Logs estruturados
@@ -305,6 +323,7 @@ CREATE TABLE search_results (
 - [x] Monitoramento básico
 
 ### Fase 3: Produção (1 semana)
+
 - [x] Configuração de ambiente de produção
 - [x] Deploy automatizado
 - [x] Monitoramento avançado
@@ -345,6 +364,7 @@ src/
 ## 🔧 Configuração de Ambiente
 
 ### Variáveis de Ambiente
+
 ```bash
 # Aplicação
 NODE_ENV=development
@@ -364,13 +384,14 @@ PLAYWRIGHT_TIMEOUT=30000
 ```
 
 ### Docker Compose (Desenvolvimento)
+
 ```yaml
 version: '3.8'
 services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=development
     depends_on:
@@ -384,7 +405,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pazdedeus
     ports:
-      - "5433:5432"
+      - '5433:5432'
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -392,19 +413,21 @@ services:
       RABBITMQ_DEFAULT_USER: root
       RABBITMQ_DEFAULT_PASS: pazdeDeus2025
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
 ```
 
 ## 📈 Métricas de Sucesso
 
 ### KPIs Técnicos
+
 - **Disponibilidade**: 99.9%
 - **Latência**: < 100ms para API, < 60s para busca
 - **Throughput**: 100 buscas simultâneas
 - **Erro Rate**: < 1%
 
 ### KPIs de Negócio
+
 - **Taxa de Conversão**: > 80% das buscas retornam resultados
 - **Satisfação do Usuário**: > 4.5/5.0
 - **Tempo de Resolução**: < 24h para problemas críticos
@@ -412,29 +435,33 @@ services:
 ## 🚨 Riscos e Mitigações
 
 ### Riscos Técnicos
-| Risco | Probabilidade | Impacto | Mitigação |
-|-------|---------------|---------|-----------|
-| Mudanças no site do ML | Média | Alto | Múltiplos seletores, testes regulares |
-| Rate limiting do ML | Alta | Médio | Delays entre requisições, múltiplas IPs |
-| Falha no RabbitMQ | Baixa | Alto | Cluster, failover automático |
-| Timeout do Playwright | Média | Médio | Retry automático, fallback manual |
+
+| Risco                  | Probabilidade | Impacto | Mitigação                               |
+| ---------------------- | ------------- | ------- | --------------------------------------- |
+| Mudanças no site do ML | Média         | Alto    | Múltiplos seletores, testes regulares   |
+| Rate limiting do ML    | Alta          | Médio   | Delays entre requisições, múltiplas IPs |
+| Falha no RabbitMQ      | Baixa         | Alto    | Cluster, failover automático            |
+| Timeout do Playwright  | Média         | Médio   | Retry automático, fallback manual       |
 
 ### Riscos de Negócio
-| Risco | Probabilidade | Impacto | Mitigação |
-|-------|---------------|---------|-----------|
-| Violação de ToS | Média | Alto | Compliance legal, rate limiting |
-| Mudança de política | Baixa | Alto | Monitoramento contínuo |
-| Concorrência | Alta | Médio | Diferenciação por features |
+
+| Risco               | Probabilidade | Impacto | Mitigação                       |
+| ------------------- | ------------- | ------- | ------------------------------- |
+| Violação de ToS     | Média         | Alto    | Compliance legal, rate limiting |
+| Mudança de política | Baixa         | Alto    | Monitoramento contínuo          |
+| Concorrência        | Alta          | Médio   | Diferenciação por features      |
 
 ## 📋 Checklist de Implementação
 
 ### Configuração Inicial
+
 - [ ] Criar projeto NestJS
 - [ ] Configurar TypeScript e ESLint
 - [ ] Instalar dependências necessárias
 - [ ] Configurar ambiente de desenvolvimento
 
 ### Backend API
+
 - [ ] Criar módulo de busca de produtos
 - [ ] Implementar controller com endpoint POST
 - [ ] Criar DTOs de validação
@@ -442,6 +469,7 @@ services:
 - [ ] Configurar conexão com RabbitMQ
 
 ### Worker Playwright
+
 - [ ] Configurar Playwright
 - [ ] Implementar service de automação
 - [ ] Criar consumer da fila RabbitMQ
@@ -449,18 +477,21 @@ services:
 - [ ] Adicionar tratamento de erros
 
 ### Banco de Dados
+
 - [ ] Criar migrations
 - [ ] Implementar entities
 - [ ] Configurar repositórios
 - [ ] Implementar persistência de resultados
 
 ### Testes e Qualidade
+
 - [x] Testes BDD com Cucumber (100% implementados)
 - [x] Testes de integração (via BDD)
 - [x] Testes E2E (via BDD)
 - [x] Configuração de CI/CD (Docker)
 
 ### Documentação
+
 - [x] README do projeto (atualizado)
 - [x] Documentação da API (Swagger implementado)
 - [x] Guia de deploy (Docker configurado)

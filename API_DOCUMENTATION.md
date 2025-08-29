@@ -15,11 +15,13 @@ Este documento descreve todas as APIs desenvolvidas no sistema de automação de
 **Endpoint:** `POST /search-product`
 
 **Headers:**
+
 ```
 Content-Type: application/json
 ```
 
 **Body (CreateSearchDto):**
+
 ```json
 {
   "productName": "PS5",
@@ -33,14 +35,16 @@ Content-Type: application/json
 ```
 
 **Campos:**
+
 - `productName` (obrigatório): Nome do produto a ser buscado (máx: 255 caracteres)
-- `maxResults` (opcional): Número máximo de resultados (1-100, padrão: 50)
+- `maxResults` (opcional): Número máximo de resultados (1-100, padrão: 50) - **SEMPRE respeitado pelo sistema**
 - `category` (opcional): Categoria do produto (máx: 100 caracteres)
 - `priceRange` (opcional): Faixa de preço para filtrar resultados
   - `min`: Preço mínimo (>= 0)
   - `max`: Preço máximo (>= 0, deve ser > min)
 
 **Resposta de Sucesso (202):**
+
 ```json
 {
   "statusCode": 202,
@@ -56,10 +60,39 @@ Content-Type: application/json
 ```
 
 **Validações:**
+
 - Nome do produto é obrigatório e não pode estar vazio
 - MaxResults deve ser entre 1 e 100
 - Se especificada, faixa de preço deve ter min < max
 - Categoria tem limite de 100 caracteres
+
+**Exemplos de Uso:**
+
+**Exemplo 1: Busca com maxResults específico**
+```json
+{
+  "productName": "Nintendo Switch",
+  "maxResults": 3
+}
+```
+**Resultado:** Sistema retorna exatamente 3 produtos (ou menos se não houver 3 disponíveis)
+
+**Exemplo 2: Busca com maxResults padrão**
+```json
+{
+  "productName": "PS5"
+}
+```
+**Resultado:** Sistema retorna até 50 produtos (valor padrão)
+
+**Exemplo 3: Busca com maxResults máximo**
+```json
+{
+  "productName": "Smartphone",
+  "maxResults": 100
+}
+```
+**Resultado:** Sistema retorna até 100 produtos
 
 ---
 
@@ -70,11 +103,13 @@ Content-Type: application/json
 **Endpoint:** `GET /search-product/{searchId}`
 
 **Parâmetros:**
+
 - `searchId` (path): ID único da busca (UUID)
 
 **Exemplo:** `GET /search-product/bfc05476-0cd9-4371-b5e9-baaf9deaea0e`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -96,6 +131,7 @@ Content-Type: application/json
 ```
 
 **Resposta de Erro (404):**
+
 ```json
 {
   "statusCode": 404,
@@ -104,6 +140,7 @@ Content-Type: application/json
 ```
 
 **Status Possíveis:**
+
 - `queued`: Busca aguardando processamento
 - `processing`: Busca em andamento
 - `completed`: Busca concluída com sucesso
@@ -119,11 +156,13 @@ Content-Type: application/json
 **Endpoint:** `GET /search-product/{searchId}/results`
 
 **Parâmetros:**
+
 - `searchId` (path): ID único da busca (UUID)
 
 **Exemplo:** `GET /search-product/bfc05476-0cd9-4371-b5e9-baaf9deaea0e/results`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -137,8 +176,8 @@ Content-Type: application/json
       {
         "id": "b376282a-59c3-415c-88e6-37bac7331e3b",
         "title": "PlayStation 5 Console Digital Edition",
-        "price": 3499.00,
-        "originalPrice": 3999.00,
+        "price": 3499.0,
+        "originalPrice": 3999.0,
         "discountPercentage": 12.5,
         "sellerName": "Loja Oficial",
         "sellerRating": 4.8,
@@ -159,6 +198,7 @@ Content-Type: application/json
 ```
 
 **Resposta sem Resultados (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -179,6 +219,7 @@ Content-Type: application/json
 ```
 
 **Campos dos Produtos:**
+
 - `id`: ID único do resultado
 - `title`: Título/nome do produto
 - `price`: Preço atual (pode ser null)
@@ -203,6 +244,7 @@ Content-Type: application/json
 **Endpoint:** `GET /worker/health`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "status": "healthy",
@@ -224,6 +266,7 @@ Content-Type: application/json
 **Endpoint:** `GET /worker/status`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "status": "running",
@@ -243,6 +286,7 @@ Content-Type: application/json
 **Endpoint:** `GET /worker/stats`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "performance": {
@@ -268,6 +312,7 @@ Content-Type: application/json
 **Endpoint:** `POST /worker/restart-browser`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -277,6 +322,7 @@ Content-Type: application/json
 ```
 
 **Resposta de Erro (500):**
+
 ```json
 {
   "statusCode": 500,
@@ -295,14 +341,17 @@ Content-Type: application/json
 **Endpoint:** `POST /worker/test-search/{productName}`
 
 **Parâmetros:**
+
 - `productName` (path): Nome do produto para teste
 
 **Query Parameters:**
+
 - `maxResults` (opcional): Número máximo de resultados (padrão: 5)
 
 **Exemplo:** `POST /worker/test-search/PS5?maxResults=3`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -314,7 +363,7 @@ Content-Type: application/json
     "results": [
       {
         "title": "PlayStation 5 Console Digital Edition",
-        "price": 3499.00,
+        "price": 3499.0,
         "sellerName": "Loja Oficial"
       }
     ]
@@ -332,6 +381,7 @@ Content-Type: application/json
 **Endpoint:** `POST /worker/test-navigation`
 
 **Resposta de Sucesso (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -353,23 +403,25 @@ Content-Type: application/json
 ### Enums
 
 #### SearchStatus
+
 ```typescript
 export enum SearchStatus {
-  QUEUED = 'queued',        // Aguardando processamento
+  QUEUED = 'queued', // Aguardando processamento
   PROCESSING = 'processing', // Em andamento
-  COMPLETED = 'completed',   // Concluída com sucesso
-  FAILED = 'failed',         // Falhou
-  CANCELLED = 'cancelled'    // Cancelada
+  COMPLETED = 'completed', // Concluída com sucesso
+  FAILED = 'failed', // Falhou
+  CANCELLED = 'cancelled', // Cancelada
 }
 ```
 
 ### DTOs Principais
 
 #### CreateSearchDto
+
 ```typescript
 {
   productName: string;           // Obrigatório
-  maxResults?: number;           // Opcional (1-100, padrão: 50)
+  maxResults?: number;           // Opcional (1-100, padrão: 50) - SEMPRE respeitado
   category?: string;             // Opcional (máx: 100 chars)
   priceRange?: {                 // Opcional
     min?: number;                // >= 0
@@ -379,6 +431,7 @@ export enum SearchStatus {
 ```
 
 #### ProductResultDto
+
 ```typescript
 {
   id: string;                    // ID único
@@ -401,6 +454,7 @@ export enum SearchStatus {
 ## 🔄 Fluxo de Uso das APIs
 
 ### 1. **Criar Busca**
+
 ```http
 POST /search-product
 Content-Type: application/json
@@ -417,16 +471,19 @@ Content-Type: application/json
 ```
 
 ### 2. **Monitorar Status**
+
 ```http
 GET /search-product/{searchId}
 ```
 
 ### 3. **Obter Resultados**
+
 ```http
 GET /search-product/{searchId}/results
 ```
 
 ### 4. **Monitorar Worker**
+
 ```http
 GET /worker/health
 GET /worker/status
@@ -438,18 +495,48 @@ GET /worker/stats
 ## ⚠️ Códigos de Erro Comuns
 
 ### 400 - Bad Request
+
 - Dados de entrada inválidos
 - Validações falharam
 - Faixa de preço inválida
 
 ### 404 - Not Found
+
 - Busca não encontrada
 - ID inválido fornecido
 
 ### 500 - Internal Server Error
+
 - Erro interno do servidor
 - Falha na conexão com banco de dados
 - Erro no worker Playwright
+
+---
+
+## 📝 Notas Importantes
+
+### ✅ Correção do maxResults (v1.1.0)
+
+**Problema Resolvido:** O parâmetro `maxResults` agora é **SEMPRE** respeitado pelo sistema, garantindo que o número de resultados retornados corresponda exatamente ao solicitado.
+
+**Antes:** O sistema sempre retornava 50 resultados independente do valor solicitado
+**Depois:** O sistema retorna exatamente o número de resultados solicitado (ou menos se não houver disponíveis)
+
+**Exemplo de Funcionamento Correto:**
+```json
+// Requisição
+{
+  "productName": "Nintendo Switch",
+  "maxResults": 3
+}
+
+// Resultado
+{
+  "totalResults": 3,
+  "maxResults": 3,
+  "results": [/* exatamente 3 produtos */]
+}
+```
 
 ---
 
@@ -458,12 +545,14 @@ GET /worker/stats
 ### Páginas Principais
 
 #### 1. **Dashboard Principal**
+
 - Visão geral das buscas ativas
 - Estatísticas de performance
 - Status do worker
 - Gráficos de métricas
 
 #### 2. **Nova Busca**
+
 - Formulário para criar busca
 - Validação em tempo real
 - Seleção de categoria
@@ -471,24 +560,28 @@ GET /worker/stats
 - Botão de envio
 
 #### 3. **Lista de Buscas**
+
 - Tabela com todas as buscas
 - Filtros por status, categoria, data
 - Paginação
 - Ações (ver detalhes, cancelar)
 
 #### 4. **Detalhes da Busca**
+
 - Status atual
 - Progresso da busca
 - Informações configuradas
 - Histórico de atualizações
 
 #### 5. **Resultados da Busca**
+
 - Lista de produtos encontrados
 - Filtros por preço, vendedor, condição
 - Ordenação por relevância, preço, avaliação
 - Cards de produto com informações completas
 
 #### 6. **Monitoramento do Worker**
+
 - Status de saúde
 - Métricas de performance
 - Logs em tempo real
@@ -497,6 +590,7 @@ GET /worker/stats
 ### Componentes da Interface
 
 #### Formulário de Busca
+
 - Campo de nome do produto (obrigatório)
 - Seletor de categoria (opcional)
 - Slider de faixa de preço (opcional)
@@ -504,12 +598,14 @@ GET /worker/stats
 - Botão de envio com loading
 
 #### Tabela de Buscas
+
 - Colunas: ID, Produto, Status, Categoria, Data, Ações
 - Filtros por status e categoria
 - Busca por texto
 - Paginação
 
 #### Cards de Produto
+
 - Imagem do produto
 - Título
 - Preço atual e original
@@ -518,11 +614,13 @@ GET /worker/stats
 - Botão para ver no Mercado Livre
 
 #### Indicadores de Status
+
 - Badges coloridos para cada status
 - Progress bar para buscas em andamento
 - Ícones intuitivos
 
 #### Métricas e Gráficos
+
 - Total de buscas por status
 - Tempo médio de conclusão
 - Taxa de sucesso
@@ -533,6 +631,7 @@ GET /worker/stats
 ## 🎨 Considerações de Design
 
 ### Cores e Status
+
 - **Queued**: Azul (#3B82F6)
 - **Processing**: Amarelo (#F59E0B)
 - **Completed**: Verde (#10B981)
@@ -540,12 +639,14 @@ GET /worker/stats
 - **Cancelled**: Cinza (#6B7280)
 
 ### Responsividade
+
 - Design mobile-first
 - Tabelas responsivas
 - Cards adaptáveis
 - Navegação touch-friendly
 
 ### Acessibilidade
+
 - Contraste adequado
 - Labels descritivos
 - Navegação por teclado
@@ -556,6 +657,7 @@ GET /worker/stats
 ## 📱 Exemplos de Uso
 
 ### Busca Simples
+
 ```json
 POST /search-product
 {
@@ -564,6 +666,7 @@ POST /search-product
 ```
 
 ### Busca com Filtros
+
 ```json
 POST /search-product
 {
@@ -578,6 +681,7 @@ POST /search-product
 ```
 
 ### Monitoramento em Tempo Real
+
 ```javascript
 // Polling para atualizar status
 setInterval(async () => {
@@ -591,16 +695,19 @@ setInterval(async () => {
 ## 🔧 Configurações Técnicas
 
 ### Base URL
+
 ```
 http://localhost:3000/api
 ```
 
 ### Timeouts
+
 - **Busca**: 30-60 segundos (estimado)
 - **API**: 30 segundos
 - **Worker Health Check**: 5 segundos
 
 ### Rate Limiting
+
 - **Criar Busca**: 10 por minuto
 - **Consultas**: 100 por minuto
 - **Worker**: 50 por minuto
@@ -610,6 +717,7 @@ http://localhost:3000/api
 ## 📋 Checklist de Implementação
 
 ### Frontend
+
 - [ ] Setup do projeto (React/Vue/Angular)
 - [ ] Componentes de formulário
 - [ ] Tabelas de dados
@@ -620,6 +728,7 @@ http://localhost:3000/api
 - [ ] Responsividade
 
 ### Integração
+
 - [ ] Cliente HTTP para APIs
 - [ ] Validação de formulários
 - [ ] Gerenciamento de estado
@@ -628,6 +737,7 @@ http://localhost:3000/api
 - [ ] Cache de dados
 
 ### UX/UI
+
 - [ ] Design system
 - [ ] Componentes reutilizáveis
 - [ ] Feedback visual

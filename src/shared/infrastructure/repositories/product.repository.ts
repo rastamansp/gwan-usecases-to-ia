@@ -10,7 +10,7 @@ export class ProductRepository implements IProductRepository {
   constructor(
     @InjectRepository(ProductSearch)
     private readonly productSearchRepository: Repository<ProductSearch>,
-    
+
     @InjectRepository(SearchResult)
     private readonly searchResultRepository: Repository<SearchResult>,
   ) {}
@@ -35,9 +35,9 @@ export class ProductRepository implements IProductRepository {
   }
 
   public async updateStatus(
-    id: string, 
-    status: string, 
-    errorMessage?: string
+    id: string,
+    status: string,
+    errorMessage?: string,
   ): Promise<ProductSearch> {
     const productSearch = await this.findById(id);
     if (!productSearch) {
@@ -52,10 +52,7 @@ export class ProductRepository implements IProductRepository {
     return await this.save(productSearch);
   }
 
-  public async saveResults(
-    searchId: string, 
-    results: SearchResult[]
-  ): Promise<SearchResult[]> {
+  public async saveResults(searchId: string, results: SearchResult[]): Promise<SearchResult[]> {
     const searchResults = results.map(result => {
       result.searchId = searchId;
       return result;

@@ -16,7 +16,7 @@ export class AppController {
       status: 'OK',
       timestamp: new Date().toISOString(),
       service: 'Product Search API',
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
     };
   }
 
@@ -29,8 +29,8 @@ export class AppController {
         health: '/health',
         test: '/test',
         api: '/api',
-        docs: '/api/docs'
-      }
+        docs: '/api/docs',
+      },
     };
   }
 }

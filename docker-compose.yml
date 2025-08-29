@@ -20,34 +20,35 @@ services:
       - PLAYWRIGHT_TIMEOUT=30000
     labels:
       # Configurações do Traefik para domínio e HTTPS
-      - "traefik.enable=true"
-      - "traefik.docker.network=gwan"
-      - "traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`)"
-      - "traefik.http.routers.product-search-app.entrypoints=websecure"
-      - "traefik.http.routers.product-search-app.tls=true"
-      - "traefik.http.routers.product-search-app.tls.certresolver=letsencrypt"
-      - "traefik.http.services.product-search-app.loadbalancer.server.port=3000"
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=gwan'
+      - 'traefik.http.routers.product-search-app.rule=Host(`mart.gwan.com.br`)'
+      - 'traefik.http.routers.product-search-app.entrypoints=websecure'
+      - 'traefik.http.routers.product-search-app.tls=true'
+      - 'traefik.http.routers.product-search-app.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.product-search-app.loadbalancer.server.port=3000'
       # Security headers
-      - "traefik.http.middlewares.product-search-app-headers.headers.sslRedirect=true"
-      - "traefik.http.middlewares.product-search-app-headers.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.product-search-app-headers.headers.browserXssFilter=true"
-      - "traefik.http.middlewares.product-search-app-headers.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.product-search-app-headers.headers.forceSTSHeader=true"
-      - "traefik.http.middlewares.product-search-app-headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.product-search-app-headers.headers.stsPreload=true"
+      - 'traefik.http.middlewares.product-search-app-headers.headers.sslRedirect=true'
+      - 'traefik.http.middlewares.product-search-app-headers.headers.stsSeconds=31536000'
+      - 'traefik.http.middlewares.product-search-app-headers.headers.browserXssFilter=true'
+      - 'traefik.http.middlewares.product-search-app-headers.headers.contentTypeNosniff=true'
+      - 'traefik.http.middlewares.product-search-app-headers.headers.forceSTSHeader=true'
+      - 'traefik.http.middlewares.product-search-app-headers.headers.stsIncludeSubdomains=true'
+      - 'traefik.http.middlewares.product-search-app-headers.headers.stsPreload=true'
       # CORS middleware
-      - "traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,PATCH,OPTIONS"
-      - "traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowOriginList=https://admin.gwan.com.br,https://www.admin.gwan.com.br,https://mart.gwan.com.br,https://www.mart.gwan.com.br"
-      - "traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowHeaders=Content-Type,Authorization"
-      - "traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowCredentials=true"
-      - "traefik.http.middlewares.product-search-app-cors.headers.accessControlMaxAge=100"
+      - 'traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,PATCH,OPTIONS'
+      - 'traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowOriginList=https://admin.gwan.com.br,https://www.admin.gwan.com.br,https://mart.gwan.com.br,https://www.mart.gwan.com.br'
+      - 'traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowHeaders=Content-Type,Authorization'
+      - 'traefik.http.middlewares.product-search-app-cors.headers.accessControlAllowCredentials=true'
+      - 'traefik.http.middlewares.product-search-app-cors.headers.accessControlMaxAge=100'
       # Apply both middlewares
-      - "traefik.http.routers.product-search-app.middlewares=product-search-app-headers,product-search-app-cors"
+      - 'traefik.http.routers.product-search-app.middlewares=product-search-app-headers,product-search-app-cors'
     volumes:
       - ./logs:/app/logs
 
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -80,33 +81,41 @@ services:
       - PLAYWRIGHT_TIMEOUT=30000
     labels:
       # Configurações do Traefik para domínio e HTTPS
-      - "traefik.enable=true"
-      - "traefik.docker.network=gwan"
-      - "traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)"
-      - "traefik.http.routers.product-search-worker.entrypoints=websecure"
-      - "traefik.http.routers.product-search-worker.tls=true"
-      - "traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt"
-      - "traefik.http.services.product-search-worker.loadbalancer.server.port=3000"
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=gwan'
+      - 'traefik.http.routers.product-search-worker.rule=Host(`mart.gwan.com.br`) && PathPrefix(`/worker`)'
+      - 'traefik.http.routers.product-search-worker.entrypoints=websecure'
+      - 'traefik.http.routers.product-search-worker.tls=true'
+      - 'traefik.http.routers.product-search-worker.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.product-search-worker.loadbalancer.server.port=3000'
       # Security headers
-      - "traefik.http.middlewares.product-search-worker-headers.headers.sslRedirect=true"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.browserXssFilter=true"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.forceSTSHeader=true"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.stsPreload=true"
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.sslRedirect=true'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.stsSeconds=31536000'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.browserXssFilter=true'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.contentTypeNosniff=true'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.forceSTSHeader=true'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.stsIncludeSubdomains=true'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.stsPreload=true'
       # CORS middleware
-      - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,PATCH,OPTIONS"
-      - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowOriginList=https://admin.gwan.com.br,https://www.admin.gwan.com.br,https://mart.gwan.com.br,https://www.mart.gwan.com.br"
-      - "traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowHeaders=Content-Type,Authorization"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.accessControlAllowCredentials=true"
-      - "traefik.http.middlewares.product-search-worker-headers.headers.accessControlMaxAge=100"
+      - 'traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,PATCH,OPTIONS'
+      - 'traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowOriginList=https://admin.gwan.com.br,https://www.admin.gwan.com.br,https://mart.gwan.com.br,https://www.mart.gwan.com.br'
+      - 'traefik.http.middlewares.product-search-worker-cors.headers.accessControlAllowHeaders=Content-Type,Authorization'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.accessControlAllowCredentials=true'
+      - 'traefik.http.middlewares.product-search-worker-headers.headers.accessControlMaxAge=100'
       # Apply both middlewares
-      - "traefik.http.routers.product-search-worker.middlewares=product-search-worker-headers,product-search-worker-cors"
+      - 'traefik.http.routers.product-search-worker.middlewares=product-search-worker-headers,product-search-worker-cors'
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/worker/health"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3000/worker/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -10,22 +10,20 @@ import { ProductSearch } from '../../shared/domain/entities/product-search.entit
 import { SearchResult } from '../../shared/domain/entities/search-result.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ProductSearch, SearchResult]),
-  ],
+  imports: [TypeOrmModule.forFeature([ProductSearch, SearchResult])],
   controllers: [SearchProductController],
   providers: [
     // Use Cases
     ExecuteProductSearchUseCase,
-    
+
     // Services
     RabbitMQConfigService,
     RabbitMQQueueService,
     WinstonLoggerService,
-    
+
     // Repositories
     ProductRepository,
-    
+
     // Providers com tokens de injeção
     {
       provide: 'IProductRepository',

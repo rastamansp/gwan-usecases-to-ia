@@ -16,14 +16,14 @@ export class RabbitMQQueueService implements IQueueService, OnModuleDestroy {
   public async sendMessage(queueName: string, message: any): Promise<boolean> {
     try {
       await this.ensureConnection();
-      
+
       if (!this.channel) {
         throw new Error('Canal não disponível');
       }
 
       const queueConfig = this.config.queueOptions;
       await this.channel.assertQueue(queueName, queueConfig);
-      
+
       const messageBuffer = Buffer.from(JSON.stringify(message));
       const success = this.channel.sendToQueue(queueName, messageBuffer, {
         persistent: true,
@@ -38,19 +38,19 @@ export class RabbitMQQueueService implements IQueueService, OnModuleDestroy {
   }
 
   public async consumeMessage(
-    queueName: string, 
-    callback: (message: any) => Promise<void>
+    queueName: string,
+    callback: (message: any) => Promise<void>,
   ): Promise<void> {
     try {
       await this.ensureConnection();
-      
+
       if (!this.channel) {
         throw new Error('Canal não disponível');
       }
 
       const queueConfig = this.config.queueOptions;
       await this.channel.assertQueue(queueName, queueConfig);
-      
+
       await this.channel.consume(queueName, async (msg: any) => {
         if (msg) {
           try {
@@ -95,20 +95,16 @@ export class RabbitMQQueueService implements IQueueService, OnModuleDestroy {
     try {
       const config = this.config.config;
       const options = this.config.connectionOptions;
-      
+
       this.connection = await amqp.connect(config.url, options);
       this.channel = await this.connection.createChannel();
-      
+
       // Configurar exchange
       const exchangeConfig = this.config.exchangeOptions;
       if (this.channel) {
-        await this.channel.assertExchange(
-          config.exchangeName, 
-          'direct', 
-          exchangeConfig
-        );
+        await this.channel.assertExchange(config.exchangeName, 'direct', exchangeConfig);
       }
-      
+
       console.log('Conexão RabbitMQ estabelecida com sucesso');
     } catch (error) {
       console.error('Erro ao conectar com RabbitMQ:', error);

@@ -8,7 +8,8 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: configService.get<string>('NODE_ENV') === 'development',
   logging: configService.get<string>('NODE_ENV') === 'development',
-  ssl: configService.get<string>('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
+  ssl:
+    configService.get<string>('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
   retryAttempts: 10,
   retryDelay: 3000,
   extra: {

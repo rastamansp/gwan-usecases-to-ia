@@ -10,14 +10,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"  # Porta diferente para não conflitar com dev
+      - '5433:5432' # Porta diferente para não conflitar com dev
     volumes:
       - test-postgres-data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
     networks:
       - test-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d test_db"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d test_db']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,14 +31,14 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
       RABBITMQ_DEFAULT_VHOST: /
     ports:
-      - "5673:5672"  # Porta diferente para não conflitar com dev
-      - "15673:15672"  # Management UI
+      - '5673:5672' # Porta diferente para não conflitar com dev
+      - '15673:15672' # Management UI
     volumes:
       - test-rabbitmq-data:/var/lib/rabbitmq
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -48,13 +48,13 @@ services:
     image: redis:7-alpine
     container_name: test-redis
     ports:
-      - "6380:6379"  # Porta diferente para não conflitar com dev
+      - '6380:6379' # Porta diferente para não conflitar com dev
     volumes:
       - test-redis-data:/data
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -72,7 +72,7 @@ services:
       REDIS_URL: redis://test-redis:6379
       TEST_APP_PORT: 3001
     ports:
-      - "3001:3001"
+      - '3001:3001'
     depends_on:
       test-postgres:
         condition: service_healthy
@@ -85,7 +85,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: ["pnpm", "run", "test:bdd"]
+    command: ['pnpm', 'run', 'test:bdd']
 
 volumes:
   test-postgres-data:
