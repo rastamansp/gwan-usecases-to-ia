@@ -64,6 +64,46 @@ export class PlaywrightService {
           '--no-first-run',
           '--no-zygote',
           '--disable-gpu',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-images',
+          '--disable-javascript',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--mute-audio',
+          '--no-default-browser-check',
+          '--no-pings',
+          '--no-zygote',
+          '--single-process',
+          '--disable-background-networking',
+          '--disable-background-timer-throttling',
+          '--disable-client-side-phishing-detection',
+          '--disable-component-update',
+          '--disable-domain-reliability',
+          '--disable-features=AudioServiceOutOfProcess',
+          '--disable-hang-monitor',
+          '--disable-ipc-flooding-protection',
+          '--disable-popup-blocking',
+          '--disable-prompt-on-repost',
+          '--disable-renderer-backgrounding',
+          '--disable-sync',
+          '--force-color-profile=srgb',
+          '--metrics-recording-only',
+          '--no-first-run',
+          '--safebrowsing-disable-auto-update',
+          '--enable-automation',
+          '--password-store=basic',
+          '--use-mock-keychain',
         ],
       };
 
@@ -80,9 +120,22 @@ export class PlaywrightService {
 
       this.browser = await chromium.launch(launchOptions);
 
+      // User-Agents realistas para parecer navegadores humanos
+      const userAgents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0',
+      ];
+
+      // Selecionar User-Agent aleatório
+      const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+      this.logger.log(`🔧 Usando User-Agent: ${randomUserAgent.substring(0, 50)}...`);
+
       this.context = await this.browser.newContext({
-        userAgent:
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        userAgent: randomUserAgent,
         viewport: { width: 1920, height: 1080 },
         locale: 'pt-BR',
         timezoneId: 'America/Sao_Paulo',
@@ -94,6 +147,14 @@ export class PlaywrightService {
           'Accept-Encoding': 'gzip, deflate, br',
           'Cache-Control': 'no-cache',
           Pragma: 'no-cache',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
         },
       });
 
@@ -242,6 +303,28 @@ export class PlaywrightService {
           this.logger.warn(`⚠️ Tentativa ${attempt}: Mercado Livre redirecionou para página de verificação`);
           
           if (attempt < maxRetries) {
+            // Tentar estratégia alternativa: buscar diretamente na URL de resultados
+            if (attempt === 2) {
+              this.logger.log('🔄 Tentativa 2: Usando estratégia alternativa - busca direta na URL de resultados');
+              try {
+                const searchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(productName)}`;
+                this.logger.log(`🔗 Tentando acessar diretamente: ${searchUrl}`);
+                
+                await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await page.waitForTimeout(5000);
+                
+                const directUrl = page.url();
+                this.logger.log(`🔗 URL após acesso direto: ${directUrl}`);
+                
+                if (!directUrl.includes('account-verification') && !directUrl.includes('verification')) {
+                  this.logger.log('✅ Estratégia alternativa funcionou!');
+                  break;
+                }
+              } catch (directError) {
+                this.logger.warn('⚠️ Estratégia alternativa falhou:', directError);
+              }
+            }
+            
             this.logger.log(`🔄 Aguardando ${attempt * 5} segundos antes da próxima tentativa...`);
             await page.waitForTimeout(attempt * 5000);
             continue;
