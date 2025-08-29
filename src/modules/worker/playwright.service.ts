@@ -191,71 +191,105 @@ export class PlaywrightService {
   }
 
   /**
-   * Executa a busca pelo produto
+   * Executa a busca pelo produto com retry automático
    */
   private async performSearch(page: Page, productName: string): Promise<void> {
-    try {
-      this.logger.log(`Executando busca por: ${productName}`);
+    const maxRetries = 3;
+    let attempt = 0;
 
-      // Localizar e preencher campo de busca
-      const searchInput = await page.waitForSelector('input[name="as_word"]', { timeout: 20000 });
-      await searchInput.fill(productName);
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        this.logger.log(`Executando busca por: ${productName} (tentativa ${attempt}/${maxRetries})`);
 
-      // Aguardar um pouco para o preenchimento
-      await page.waitForTimeout(1000);
-
-      // Clicar no botão de busca
-      const searchButton = await page.waitForSelector('button[type="submit"]', { timeout: 20000 });
-      await searchButton.click();
-
-      // Aguardar carregamento dos resultados com estratégia mais simples
-      this.logger.log('Aguardando carregamento dos resultados...');
-
-      // Aguardar um tempo fixo para a página carregar
-      await page.waitForTimeout(8000);
-
-      // Verificar se há algum conteúdo na página
-      const pageContent = await page.content();
-      this.logger.log(`📄 Tamanho da página após busca: ${pageContent.length} caracteres`);
-
-      // Verificar título da página
-      const pageTitle = await page.title();
-      this.logger.log(`📋 Título da página após busca: ${pageTitle}`);
-
-      // Verificar URL atual
-      const currentUrl = page.url();
-      this.logger.log(`🔗 URL atual: ${currentUrl}`);
-
-      // Verificar se foi redirecionado para página de verificação
-      if (currentUrl.includes('account-verification') || currentUrl.includes('verification')) {
-        this.logger.warn('⚠️ Mercado Livre redirecionou para página de verificação de conta');
-        this.logger.warn('🔍 Isso pode indicar que o IP está sendo bloqueado ou precisa de verificação');
-        
-        // Tentar voltar para a página principal
-        try {
+        // Verificar se estamos na página principal
+        const currentUrl = page.url();
+        if (!currentUrl.includes('mercadolivre.com.br') || currentUrl.includes('account-verification')) {
+          this.logger.log('🔄 Navegando para página principal do Mercado Livre...');
           await page.goto('https://www.mercadolivre.com.br/', { waitUntil: 'domcontentloaded' });
-          this.logger.log('🔄 Tentando voltar para página principal...');
           await page.waitForTimeout(3000);
-        } catch (navigationError) {
-          this.logger.error('❌ Erro ao tentar voltar para página principal:', navigationError);
+        }
+
+        // Localizar e preencher campo de busca
+        const searchInput = await page.waitForSelector('input[name="as_word"]', { timeout: 20000 });
+        await searchInput.fill(productName);
+
+        // Aguardar um pouco para o preenchimento
+        await page.waitForTimeout(1000);
+
+        // Clicar no botão de busca
+        const searchButton = await page.waitForSelector('button[type="submit"]', { timeout: 20000 });
+        await searchButton.click();
+
+        // Aguardar carregamento dos resultados
+        this.logger.log('Aguardando carregamento dos resultados...');
+        await page.waitForTimeout(8000);
+
+        // Verificar se há algum conteúdo na página
+        const pageContent = await page.content();
+        this.logger.log(`📄 Tamanho da página após busca: ${pageContent.length} caracteres`);
+
+        // Verificar título da página
+        const pageTitle = await page.title();
+        this.logger.log(`📋 Título da página após busca: ${pageTitle}`);
+
+        // Verificar URL atual
+        const finalUrl = page.url();
+        this.logger.log(`🔗 URL atual: ${finalUrl}`);
+
+        // Verificar se foi redirecionado para página de verificação
+        if (finalUrl.includes('account-verification') || finalUrl.includes('verification')) {
+          this.logger.warn(`⚠️ Tentativa ${attempt}: Mercado Livre redirecionou para página de verificação`);
+          
+          if (attempt < maxRetries) {
+            this.logger.log(`🔄 Aguardando ${attempt * 5} segundos antes da próxima tentativa...`);
+            await page.waitForTimeout(attempt * 5000);
+            continue;
+          } else {
+            this.logger.error('❌ Todas as tentativas falharam - IP pode estar bloqueado');
+            throw new Error('Mercado Livre bloqueou todas as tentativas de acesso');
+          }
+        }
+
+        // Verificar se chegamos na página de resultados
+        if (finalUrl.includes('lista.mercadolivre.com.br') || finalUrl.includes('search')) {
+          this.logger.log('✅ Página de resultados carregada com sucesso');
+          break;
+        } else {
+          this.logger.warn(`⚠️ Tentativa ${attempt}: Não chegamos na página de resultados`);
+          
+          if (attempt < maxRetries) {
+            this.logger.log(`🔄 Aguardando ${attempt * 3} segundos antes da próxima tentativa...`);
+            await page.waitForTimeout(attempt * 3000);
+            continue;
+          }
+        }
+
+        // Capturar screenshot da página de resultados
+        const timestamp = Date.now();
+        const screenshotFilename = `search-results-${timestamp}.png`;
+        const screenshotPath = await this.captureScreenshot(page, screenshotFilename, true);
+
+        if (screenshotPath) {
+          this.logger.log(`✅ Screenshot da página de resultados salvo: ${screenshotPath}`);
+        } else {
+          this.logger.warn('⚠️ Falha ao capturar screenshot da página de resultados');
+        }
+
+        this.logger.log('Busca executada com sucesso');
+        return;
+
+      } catch (error) {
+        this.logger.error(`❌ Tentativa ${attempt} falhou:`, error);
+        
+        if (attempt < maxRetries) {
+          this.logger.log(`🔄 Aguardando ${attempt * 2} segundos antes da próxima tentativa...`);
+          await page.waitForTimeout(attempt * 2000);
+        } else {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`Falha ao executar busca após ${maxRetries} tentativas: ${errorMessage}`);
         }
       }
-
-      // Capturar screenshot da página de resultados
-      const timestamp = Date.now();
-      const screenshotFilename = `search-results-${timestamp}.png`;
-      const screenshotPath = await this.captureScreenshot(page, screenshotFilename, true);
-
-      if (screenshotPath) {
-        this.logger.log(`✅ Screenshot da página de resultados salvo: ${screenshotPath}`);
-      } else {
-        this.logger.warn('⚠️ Falha ao capturar screenshot da página de resultados');
-      }
-
-      this.logger.log('Busca executada com sucesso');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Falha ao executar busca: ${errorMessage}`);
     }
   }
 
