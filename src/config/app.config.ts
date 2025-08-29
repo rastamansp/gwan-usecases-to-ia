@@ -43,8 +43,14 @@ export class AppConfig {
       // Windows: usar Playwright nativo (sem caminho específico)
       return '';
     } else if (process.platform === 'linux') {
-      // Linux: usar caminho padrão do Docker
-      return this.configService.get<string>('PLAYWRIGHT_BROWSER_PATH', '/usr/bin/chromium');
+      // Linux: usar caminho padrão do Docker ou deixar Playwright detectar automaticamente
+      const customPath = this.configService.get<string>('PLAYWRIGHT_BROWSER_PATH', '');
+      if (customPath && customPath !== '/usr/bin/chromium') {
+        // Se foi especificado um caminho personalizado válido, usar
+        return customPath;
+      }
+      // Se não foi especificado ou é o caminho padrão incorreto, deixar Playwright detectar
+      return '';
     } else if (process.platform === 'darwin') {
       // macOS: usar Playwright nativo
       return '';
