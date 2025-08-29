@@ -226,6 +226,21 @@ export class PlaywrightService {
       const currentUrl = page.url();
       this.logger.log(`🔗 URL atual: ${currentUrl}`);
 
+      // Verificar se foi redirecionado para página de verificação
+      if (currentUrl.includes('account-verification') || currentUrl.includes('verification')) {
+        this.logger.warn('⚠️ Mercado Livre redirecionou para página de verificação de conta');
+        this.logger.warn('🔍 Isso pode indicar que o IP está sendo bloqueado ou precisa de verificação');
+        
+        // Tentar voltar para a página principal
+        try {
+          await page.goto('https://www.mercadolivre.com.br/', { waitUntil: 'domcontentloaded' });
+          this.logger.log('🔄 Tentando voltar para página principal...');
+          await page.waitForTimeout(3000);
+        } catch (navigationError) {
+          this.logger.error('❌ Erro ao tentar voltar para página principal:', navigationError);
+        }
+      }
+
       // Capturar screenshot da página de resultados
       const timestamp = Date.now();
       const screenshotFilename = `search-results-${timestamp}.png`;
@@ -270,6 +285,13 @@ export class PlaywrightService {
       const pageUrl = page.url();
       this.logger.log(`📄 Página atual: ${pageTitle}`);
       this.logger.log(`🔗 URL: ${pageUrl}`);
+
+      // Verificar se foi redirecionado para página de verificação
+      if (pageUrl.includes('account-verification') || pageUrl.includes('verification')) {
+        this.logger.warn('⚠️ Mercado Livre redirecionou para página de verificação durante extração');
+        this.logger.warn('🔍 Não será possível extrair produtos desta página');
+        return [];
+      }
 
       // Tentar múltiplos seletores para encontrar produtos
       this.logger.log('🔍 Procurando produtos com múltiplos seletores...');
@@ -1072,7 +1094,10 @@ export class PlaywrightService {
    * Garante que a pasta de screenshots exista
    */
   private ensureScreenshotsDirectory(): string {
-    const screenshotsDir = path.join(process.cwd(), 'logs', 'screenshots');
+    // Em produção, usar pasta que o container pode acessar
+    const screenshotsDir = process.env.NODE_ENV === 'production' 
+      ? '/app/logs/screenshots'
+      : path.join(process.cwd(), 'logs', 'screenshots');
 
     try {
       if (!fs.existsSync(screenshotsDir)) {
@@ -1083,8 +1108,23 @@ export class PlaywrightService {
       return screenshotsDir;
     } catch (error) {
       this.logger.error('❌ Erro ao criar pasta de screenshots:', error);
-      // Fallback para pasta temporária
-      return path.join(process.cwd(), 'temp-screenshots');
+      
+      // Fallback para pasta que o container pode acessar
+      const fallbackDir = process.env.NODE_ENV === 'production'
+        ? '/tmp/screenshots'
+        : path.join(process.cwd(), 'temp-screenshots');
+      
+      try {
+        if (!fs.existsSync(fallbackDir)) {
+          fs.mkdirSync(fallbackDir, { recursive: true });
+        }
+        this.logger.log(`📁 Usando pasta fallback: ${fallbackDir}`);
+        return fallbackDir;
+      } catch (fallbackError) {
+        this.logger.error('❌ Erro ao criar pasta fallback:', fallbackError);
+        // Último recurso: usar pasta temporária do sistema
+        return '/tmp';
+      }
     }
   }
 
